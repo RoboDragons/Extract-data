@@ -1,0 +1,3 @@
+[submodule "ssl-logtools"]
+	path = ssl-logtools
+	url = git@github.com:RoboCup-SSL/ssl-logtools.git
