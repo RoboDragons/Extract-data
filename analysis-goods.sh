@@ -29,15 +29,17 @@ make
 
 # Add the PPA and install QT4 packages
 sudo add-apt-repository ppa:/ubuntuhandbook1/ppa
+sudo apt update
 sudo apt install qt4-*
 
 # Run make again
 make
 
 # Clone the SSL-Logtools repository
-cd ../../
-git clone git@github.com:RoboCup-SSL/ssl-vision.git
-cd ./ssl-vision
+
+#cd ../../
+#git clone git@github.com:RoboCup-SSL/ssl-vision.git
+#cd ./ssl-vision
 
 # Run the Install Packages script
-sudo ./InstallPackagesUbuntu.sh
+#sudo ./InstallPackagesUbuntu.sh
