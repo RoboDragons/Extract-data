@@ -15,7 +15,9 @@ def main():
     # ログの保存設定
     output_path = "out/"
     calibration_file_path = os.path.join(output_path, "calib.txt")
-    frame_file_path = os.path.join(output_path, "ssl-vision-client.csv")
+    offense_frame_file_path = os.path.join(output_path, "offense_frame.csv")
+    defense_frame_file_path = os.path.join(output_path, "defense_frame.csv")
+    
 
     # ソケットのセットアップ
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -29,7 +31,8 @@ def main():
 
     calibration_done = False
     calibration_data = None
-    frames = []
+    offense_frames = []
+    
 
     try:
         while True:
@@ -55,20 +58,64 @@ def main():
                         ball = detection_data.balls[0]
 
                     # ロボットの位置データ
-                    robot_positions = [None] * 24  # 12台のロボット、各ロボットのxとyを記録するため24要素
-                    attacking_robots_count = 0
-                    total_robots = len(detection_data.robots_blue)
-
+                    pside_offense_robo_position = [None] * 24# 12台のロボット、各ロボットのxとyを記録するため24要素
+                    pside_defence_robo_position = [None] * 24
+                    nside_offense_robo_position = [None] * 24
+                    nside_defence_robo_position = [None] * 24
+                    attacking_blue_robots_count = 0
+                    attacking_yellow_robots_count = 0
+                    defending_blue_robots_count = 0
+                    defending_yellow_robots_count = 0
+                    
+                    total_blue_robots = len(detection_data.robots_blue)
+                    total_yellow_robots = len(detection_data.robots_yellow)
+                    #コートの判定
+                    #print(detection_data)
+                    print(calibration_data)
+                    #bulearea=detection_data.center_circle_radius
+                    blue_robot=detection_data.robots_blue
+                    yellow_robot=detection_data.robots_yellow
+                    #途中で変わる可能性ある笑
+                    #審判の信号とれるといいよね！
+                    
+                    #ゴールエリアにいるロボットがどっちかでコートを判定します！
+                    if(4800<blue_robot.x &6000>blue_robot.x &1800>blue_robot.y & -1800<blue_robot.y ):
+                        pside_team=blue_robot
+                        nside_team=yellow_robot
+                    else:
+                        pside_team=yellow_robot
+                        nside_team=blue_robot
+                        
                     # 攻撃しているロボットのカウントと位置を記録
-                    for robot in detection_data.robots_blue:
-                        if robot.x > 0:
-                            attacking_robots_count += 1
-                        robot_positions[robot.robot_id * 2] = robot.x
-                        robot_positions[robot.robot_id * 2 + 1] = robot.y
+                        #オフェンスディフェンスのフラグ（いるかもで作った）
+                        pside_team_offence=False
+                        pside_team_defence=False
+                        nside_team_offence=False
+                        nside_team_defence=False
+                    #ボールの保持を定義
+                        #print(blue_robot.pixel_x)
+                        print(container)
 
+                    #pojiサイドの攻めの人数
+                        for robot in pside_team:
+                            if robot.x > 0:
+                                attacking_blue_robots_count += 1
+                                pside_offense_robo_position[robot.robot_id * 2] = robot.x
+                                pside_offense_robo_position[robot.robot_id * 2 + 1] = robot.y
+                                
+                        for robot in pside_team:
+                            if robot.x > 0:
+                                attacking_blue_robots_count += 1
+                                pside_offense_robo_position[robot.robot_id * 2] = robot.x
+                                pside_offense_robo_position[robot.robot_id * 2 + 1] = robot.y
+                    
+                    #攻めの定義ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+                    #攻めをロボットが半分以上相手コートにいた時と定義しました．検証する必要あり！
                     # 攻撃条件に基づくロジック
-                    if ball and ball.x > 0 and attacking_robots_count > total_robots / 2:
-                        frames.append(robot_positions)
+                    if ball and ball.x > 0 and attacking_blue_robots_count > total_blue_robots / 2:
+                        offense_frames.append(pside_offense_robo_position)
+                    
+                    
 
             except Exception as e:
                 print(f"Error while processing data: {e}")
@@ -87,11 +134,17 @@ def main():
                 calib_file.write(str(calibration_data))
             print(f"Calibration data saved to {calibration_file_path}")
 
-        if frames:
+        if offense_frames:
             columns = [f"{i // 2 + 1}_posi_x" if i % 2 == 0 else f"{i // 2 + 1}_posi_y" for i in range(24)]
-            df = pd.DataFrame(frames, columns=columns)
-            df.to_csv(frame_file_path, index=False)
-            print(f"Frames saved to {frame_file_path}")
+            df = pd.DataFrame(offense_frames, columns=columns)
+            df.to_csv(offense_frame_file_path, index=False)
+            print(f"offense_frames saved to {offense_frame_file_path}")
+
+        if offense_frames:
+            columns = [f"{i // 2 + 1}_posi_x" if i % 2 == 0 else f"{i // 2 + 1}_posi_y" for i in range(24)]
+            df = pd.DataFrame(offense_frames, columns=columns)
+            df.to_csv(offense_frame_file_path, index=False)
+            print(f"offense_frames saved to {offense_frame_file_path}")
 
         udp_socket.close()
         print("ソケットを閉じました")
