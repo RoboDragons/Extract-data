@@ -58,15 +58,8 @@ def main():
                         ball = detection_data.balls[0]
 
                     # ロボットの位置データ
-                    pside_offense_robo_position = [None] * 24# 12台のロボット、各ロボットのxとyを記録するため24要素
-                    pside_defence_robo_position = [None] * 24
-                    nside_offense_robo_position = [None] * 24
-                    nside_defence_robo_position = [None] * 24
-                    attacking_blue_robots_count = 0
-                    attacking_yellow_robots_count = 0
-                    defending_blue_robots_count = 0
-                    defending_yellow_robots_count = 0
-                    
+                    robot_positions = [None] * 24  # 12台のロボット、各ロボットのxとyを記録するため24要素
+                    attacking_robots_count = 0
                     total_blue_robots = len(detection_data.robots_blue)
                     total_yellow_robots = len(detection_data.robots_yellow)
                     #コートの判定
@@ -75,11 +68,7 @@ def main():
                     #bulearea=detection_data.center_circle_radius
                     blue_robot=detection_data.robots_blue
                     yellow_robot=detection_data.robots_yellow
-                    #途中で変わる可能性ある笑
-                    #審判の信号とれるといいよね！
-                    
-                    #ゴールエリアにいるロボットがどっちかでコートを判定します！
-                    if(4800<blue_robot.x and 6000>blue_robot.x and 1800>blue_robot.y and -1800<blue_robot.y ):
+                    if(4800<blue_robot.x &6000>blue_robot.x &1800>blue_robot.y & -1800<blue_robot.y ):
                         pside_team=blue_robot
                         nside_team=yellow_robot
                     else:
@@ -87,35 +76,19 @@ def main():
                         nside_team=blue_robot
                         
                     # 攻撃しているロボットのカウントと位置を記録
-                        #オフェンスディフェンスのフラグ（いるかもで作った）
                         pside_team_offence=False
                         pside_team_defence=False
                         nside_team_offence=False
                         nside_team_defence=False
-                    #ボールの保持を定義
-                        #print(blue_robot.pixel_x)
-                        print(container)
+                        for robot in detection_data.robots_blue:
+                            if robot.x > 0:
+                                attacking_robots_count += 1
+                                robot_positions[robot.robot_id * 2] = robot.x
+                                robot_positions[robot.robot_id * 2 + 1] = robot.y
 
-                    #pojiサイドの攻めの人数
-                        for robot in pside_team:
-                            if robot.x > 0:
-                                attacking_blue_robots_count += 1
-                                pside_offense_robo_position[robot.robot_id * 2] = robot.x
-                                pside_offense_robo_position[robot.robot_id * 2 + 1] = robot.y
-                                
-                        for robot in pside_team:
-                            if robot.x > 0:
-                                attacking_blue_robots_count += 1
-                                pside_offense_robo_position[robot.robot_id * 2] = robot.x
-                                pside_offense_robo_position[robot.robot_id * 2 + 1] = robot.y
-                    
-                    #攻めの定義ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-                    #攻めをロボットが半分以上相手コートにいた時と定義しました．検証する必要あり！
                     # 攻撃条件に基づくロジック
-                    if ball and ball.x > 0 and attacking_blue_robots_count > total_blue_robots / 2:
-                        offense_frames.append(pside_offense_robo_position)
-                    
-                    
+                    if ball and ball.x > 0 and attacking_robots_count > total_blue_robots / 2:
+                        offense_frames.append(robot_positions)
 
             except Exception as e:
                 print(f"Error while processing data: {e}")
