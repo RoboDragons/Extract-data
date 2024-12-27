@@ -79,7 +79,7 @@ def main():
                     #審判の信号とれるといいよね！
                     
                     #ゴールエリアにいるロボットがどっちかでコートを判定します！
-                    if(4800<blue_robot.x and 6000>blue_robot.x and 1800>blue_robot.y and -1800<blue_robot.y ):
+                    if(4800<blue_robot.x &6000>blue_robot.x &1800>blue_robot.y & -1800<blue_robot.y ):
                         pside_team=blue_robot
                         nside_team=yellow_robot
                     else:
