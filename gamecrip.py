@@ -115,7 +115,6 @@ def main():
                     if ball and ball.x > 0 and attacking_blue_robots_count > total_blue_robots / 2:
                         offense_frames.append(pside_offense_robo_position)
                     
-                    
 
             except Exception as e:
                 print(f"Error while processing data: {e}")
