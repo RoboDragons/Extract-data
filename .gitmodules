@@ -1,0 +1,6 @@
+[submodule "ssl-game-controller"]
+	path = ssl-game-controller
+	url = https://github.com/RoboCup-SSL/ssl-game-controller.git
+[submodule "AutoReferee"]
+	path = AutoReferee
+	url = git@github.com:TIGERs-Mannheim/AutoReferee.git

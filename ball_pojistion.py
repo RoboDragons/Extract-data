@@ -56,8 +56,8 @@ def main():
                      balls.pixel_x,
                      balls.pixel_y,
                     ]
-                    if frame.frame_number%1000 == 0:
-                        balls_position=[int(balls.x),int(balls.y)]
+                    if frame.frame_number%10 == 0:
+                        balls_position=[int(balls.x)/10,int(balls.y)/10]
                         ball_position.append(balls_position)
                         print("ball_position: ", ball_position)
                         print("\n")
