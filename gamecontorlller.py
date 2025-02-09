@@ -1,6 +1,8 @@
 import socket
 import struct
 import ssl_gc_state_pb2
+import ssl_gc_engine_pb2
+import ssl_gc_referee_message_pb2
 
 def receive_game_controller_signal():
     buffer_size = 4096  # バッファサイズを増やす
@@ -28,15 +30,40 @@ def receive_game_controller_signal():
 
             print("データを受信しました from", address)
             print("受信データ (バイナリ):", data)  # 受信データをバイナリ形式で表示
-
+            
             try:
-                game_state = ssl_gc_state_pb2.GameState()  # 修正箇所
-                game_state.ParseFromString(data)
-                print("Game State:", game_state)
-            except (UnicodeDecodeError, Exception) as e:  # `DecodeError` を `Exception` に変更
-                print("デコードまたは解析エラー:", e)
+                # RefereeMessageのデコード
+                referee_message = ssl_gc_referee_message_pb2.Referee()
+                referee_message.ParseFromString(data)
+                print("Referee Message (人間が読みやすい形式):")
+                print(referee_message.command)
+            except Exception as e:
+                print("RefereeMessage デコードエラー:", e)
 
-            print("----------------------------------")
+            # try:
+            #     # ContinueActionのデコード
+            #     continue_action = ssl_gc_engine_pb2.ContinueAction()
+            #     continue_action.ParseFromString(data)
+            #     print("Continue Action (人間が読みやすい形式):")
+            #     print(continue_action)
+                
+            #     print("----------------------------------")
+            #     print("Continue Action Type:", ssl_gc_engine_pb2.ContinueAction.Type.Name(continue_action.type))
+            # except Exception as e:
+            #     print("ContinueAction デコードエラー:", e)
+
+            # try:
+            #     # GameStateのデコード
+            #     game_state = ssl_gc_state_pb2.GameState()
+            #     game_state.ParseFromString(data)
+            #     print("Game State (人間が読みやすい形式):")
+            #     print(game_state)
+                
+            #     print("----------------------------------")
+            # except Exception as e:
+            #     print("GameState デコードエラー:", e)
+            
+            print("-\-\-\-\-\-\--\\-\---\\\\\\\\\\\\\\\\\\-\\\-\\-\-\-\-\-\-\-\----------------------")
 
     except KeyboardInterrupt:
         print("終了処理を開始します...")
