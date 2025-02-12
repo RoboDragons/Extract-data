@@ -188,7 +188,7 @@ def possession():
                                         holding_num.append(robots_blue[min_dist_blue_robot_index].robot_id)
                                         if holding_num.count(robots_blue[min_dist_blue_robot_index].robot_id) >=10:
                                             print("blue",min_dist_blue_robot_index)
-                                            ball_holding_robot.append([robots_blue[min_dist_blue_robot_index].robot_id,ball.frame.x,ball.frame.y,blue_possession_time,yellow_possession_time,game_time])
+                                            ball_holding_robot.append([robots_blue[min_dist_blue_robot_index].robot_id,balls[0].x,balls[0].y,blue_possession_time,yellow_possession_time,game_time])
                                             holding_num.clear()
                             min_dist_blue_robot_index=0
                             ball_to_bluerobots_distance=[1000]*len(robots_blue)
@@ -206,7 +206,7 @@ def possession():
                                         holding_num.append(robots_yellow[min_dist_yellow_robot_index].robot_id)
                                         if holding_num.count(robots_yellow[min_dist_yellow_robot_index].robot_id) >=10:
                                             print("yellow",min_dist_yellow_robot_index)
-                                            ball_holding_robot.append([robots_yellow[min_dist_yellow_robot_index].robot_id,ball.frame.x,ball.frame.y,blue_possession_time,yellow_possession_time,game_time])
+                                            ball_holding_robot.append([robots_yellow[min_dist_yellow_robot_index].robot_id,balls[0].x,balls[0].y,blue_possession_time,yellow_possession_time,game_time])
                                             holding_num.clear()
                             min_dist_yellow_robot_index=0
                             ball_to_yellowrobots_distance=[1000]*len(robots_yellow)
@@ -219,9 +219,10 @@ def possession():
         except KeyboardInterrupt:
             break
         except Exception as e:
+                print("x:y",frame.balls[0].x,frame.balls[0].y)
                 print("RefereeMessage デコードエラー:", e)
-                print("b=",min_dist_blue_robot_index)
-                print("y=",min_dist_yellow_robot_index)
+                # print("b=",min_dist_blue_robot_index)
+                # print("y=",min_dist_yellow_robot_index)
 
     udp.close()
 
