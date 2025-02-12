@@ -188,7 +188,7 @@ def possession():
                                         holding_num.append(robots_blue[min_dist_blue_robot_index].robot_id)
                                         if holding_num.count(robots_blue[min_dist_blue_robot_index].robot_id) >=10:
                                             print("blue",min_dist_blue_robot_index)
-                                            ball_holding_robot.append([robots_blue[min_dist_blue_robot_index].robot_id,blue_possession_time,yellow_possession_time,game_time])
+                                            ball_holding_robot.append([robots_blue[min_dist_blue_robot_index].robot_id,ball.frame.x,ball.frame.y,blue_possession_time,yellow_possession_time,game_time])
                                             holding_num.clear()
                             min_dist_blue_robot_index=0
                             ball_to_bluerobots_distance=[1000]*len(robots_blue)
@@ -206,14 +206,14 @@ def possession():
                                         holding_num.append(robots_yellow[min_dist_yellow_robot_index].robot_id)
                                         if holding_num.count(robots_yellow[min_dist_yellow_robot_index].robot_id) >=10:
                                             print("yellow",min_dist_yellow_robot_index)
-                                            ball_holding_robot.append([robots_yellow[min_dist_yellow_robot_index].robot_id,blue_possession_time,yellow_possession_time,game_time])
+                                            ball_holding_robot.append([robots_yellow[min_dist_yellow_robot_index].robot_id,ball.frame.x,ball.frame.y,blue_possession_time,yellow_possession_time,game_time])
                                             holding_num.clear()
                             min_dist_yellow_robot_index=0
                             ball_to_yellowrobots_distance=[1000]*len(robots_yellow)
                             ball_to_yellowrobots_id=[0]*len(robots_yellow)
                     
                                             
-                df = pd.DataFrame(ball_holding_robot, columns=["robot_id", "blue_possession_time", "yellow_possession_time", "game_time"])
+                df = pd.DataFrame(ball_holding_robot, columns=["robot_id","ball_holding_place_x" ,"ball_holding_place_y","blue_possession_time", "yellow_possession_time", "game_time"])
                 df = df.sort_values("game_time")
                 df.to_csv(possessionPath, header=True, index=False)
         except KeyboardInterrupt:
