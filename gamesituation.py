@@ -147,6 +147,7 @@ def possession():
     ball_to_yellowrobots_id=[]
     min_dist_blue_robot_index=0
     min_dist_yellow_robot_index=0
+    holding_num=[]
     ball_holding_robot=[]
     
     robots_radius=80
@@ -184,8 +185,11 @@ def possession():
                                 if math.atan(robots_blue[min_dist_blue_robot_index].orientation)*(ball.x-robots_blue[min_dist_blue_robot_index].x)+robots_blue[min_dist_blue_robot_index].y+robots_radius > ball.y and math.atan(robots_blue[min_dist_blue_robot_index].orientation)*(ball.x-robots_blue[min_dist_blue_robot_index].x)+robots_blue[min_dist_blue_robot_index].y-robots_radius < ball.y:
                                     if min(ball_to_bluerobots_distance) < holding_distance*holding_distance:
                                         blue_possession_time+=1.0
-                                        print("blue",min_dist_blue_robot_index)
-                                        ball_holding_robot.append([robots_blue[min_dist_blue_robot_index].robot_id,blue_possession_time,yellow_possession_time,game_time])
+                                        holding_num.append(robots_blue[min_dist_blue_robot_index].robot_id)
+                                        if holding_num.count(robots_blue[min_dist_blue_robot_index].robot_id) >=10:
+                                            print("blue",min_dist_blue_robot_index)
+                                            ball_holding_robot.append([robots_blue[min_dist_blue_robot_index].robot_id,blue_possession_time,yellow_possession_time,game_time])
+                                            holding_num.clear()
                             min_dist_blue_robot_index=0
                             ball_to_bluerobots_distance=[1000]*len(robots_blue)
                             ball_to_bluerobots_id=[0]*len(robots_blue)
@@ -199,8 +203,11 @@ def possession():
                                 if math.atan(robots_yellow[min_dist_yellow_robot_index].orientation)*(ball.x-robots_yellow[min_dist_yellow_robot_index].x)+robots_yellow[min_dist_yellow_robot_index].y+robots_radius > ball.y and math.atan(robots_yellow[min_dist_yellow_robot_index].orientation)*(ball.x-robots_yellow[min_dist_yellow_robot_index].x)+robots_yellow[min_dist_yellow_robot_index].y-robots_radius < ball.y:
                                     if min(ball_to_yellowrobots_distance) < holding_distance*holding_distance:
                                         yellow_possession_time+=1.0
-                                        print("yellow",min_dist_yellow_robot_index)
-                                        ball_holding_robot.append([robots_yellow[min_dist_yellow_robot_index].robot_id,blue_possession_time,yellow_possession_time,game_time])
+                                        holding_num.append(robots_yellow[min_dist_yellow_robot_index].robot_id)
+                                        if holding_num.count(robots_yellow[min_dist_yellow_robot_index].robot_id) >=10:
+                                            print("yellow",min_dist_yellow_robot_index)
+                                            ball_holding_robot.append([robots_yellow[min_dist_yellow_robot_index].robot_id,blue_possession_time,yellow_possession_time,game_time])
+                                            holding_num.clear()
                             min_dist_yellow_robot_index=0
                             ball_to_yellowrobots_distance=[1000]*len(robots_yellow)
                             ball_to_yellowrobots_id=[0]*len(robots_yellow)
