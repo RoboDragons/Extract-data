@@ -219,10 +219,9 @@ def possession():
         except KeyboardInterrupt:
             break
         except Exception as e:
-                print("x:y",frame.balls[0].x,frame.balls[0].y)
                 print("RefereeMessage デコードエラー:", e)
-                # print("b=",min_dist_blue_robot_index)
-                # print("y=",min_dist_yellow_robot_index)
+                print("b=",min_dist_blue_robot_index)
+                print("y=",min_dist_yellow_robot_index)
 
     udp.close()
 
