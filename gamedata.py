@@ -204,7 +204,7 @@ def judge_possesion():
                         df.to_csv(possessionPath,header=True,index=False)
                     else:
                         holding_data.append(yellow)
-                        print("holding",holding_data.)
+                        print("holding",holding_data)
                         df=pd.DataFrame(holding_data,columns=["dist","robot_data","ball_x","ball_y","time"])
                         df.to_csv(possessionPath,header=True,index=False)
         except KeyboardInterrupt:
