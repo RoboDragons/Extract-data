@@ -21,6 +21,9 @@ stop_event = threading.Event()
 game_time=0.0
 blue_possession_time=0.0
 yellow_possession_time=0.0
+robots_radius=800
+holding_distance=15000
+    
 
 local = "127.0.0.1"
 multicast = "224.5.23.2"
@@ -76,6 +79,7 @@ def receive_game_controller_signal():
 
     except KeyboardInterrupt:
         print("終了処理を開始します...")
+
 def track_ball_position():
     global udp
     while not stop_event.is_set():
@@ -100,9 +104,7 @@ def track_ball_position():
     
         except KeyboardInterrupt:
             break
-    udp.close()
 
-    
 def store_ball_position():
     while not stop_event.is_set():
         try:
@@ -122,25 +124,27 @@ def store_ball_position():
         except KeyboardInterrupt:
             break
 
-    udp.close()
+def count_game_time(name):
+    global game_time, blue_possession_time, yellow_possession_time, count
+    if receive_game_controller_signal() in Game_on:
+        if name == "blue":
+            blue_possession_time+=1.0
+        elif name == "yellow":
+            yellow_possession_time+=1.0 
+        game_time+=1.0
+        return [game_time, blue_possession_time, yellow_possession_time]
 
-def possession():
-    global game_time, blue_possession_time, yellow_possession_time, udp, path, possessionPath
+def possession(team_name):
+    global game_time, blue_possession_time, yellow_possession_time, udp, path, possessionPath,robots_radius,holding_distance
     possessionPath = path + "possession.csv"
     if not os.path.isdir(path):
         os.mkdir(path)
 
-    ball_to_bluerobots_distance=[]
-    ball_to_yellowrobots_distance=[]    
-    ball_to_bluerobots_id=[]
-    ball_to_yellowrobots_id=[]
-    min_dist_blue_robot_index=0
-    min_dist_yellow_robot_index=0
+    ball_to_robots_distance=[]    
+    ball_to_robots_id=[]
+    min_dist_robot_index=0
     holding_num=[]
     ball_holding_robot=[]
-    
-    robots_radius=800
-    holding_distance=15000
     
     while not stop_event.is_set():
         try:
@@ -153,72 +157,66 @@ def possession():
                 game_time+=1.0
                 if frame:
                     #print("frame: ", frame)
-                    robots_blue = frame.robots_blue
-                    robots_yellow = frame.robots_yellow
+                    if team_name == "blue":
+                        robot = frame.robots_blue
+                    elif team_name == "yellow":
+                        robot = frame.robots_yellow
                     balls = frame.balls
                     #print(robots_blue)
                     if balls:
                         ball=balls[0]
                         if debug:
                             print("ball: ", int(ball.x))
-                        if robots_blue:
-                            for i in range(len(robots_blue)):
-                                ball_to_bluerobots_distance.append((robots_blue[i].x-ball.x)**2+(robots_blue[i].y-ball.y)**2)
-                                ball_to_bluerobots_id.append(robots_blue[i].robot_id)
-                            if ball_to_bluerobots_distance:
-                                min_dist_blue_robot_index=ball_to_bluerobots_distance.index(min(ball_to_bluerobots_distance))
-                                
-                            if 0 <= min_dist_blue_robot_index < len(robots_blue):
-                                if math.atan(robots_blue[min_dist_blue_robot_index].orientation)*(ball.x-robots_blue[min_dist_blue_robot_index].x)+robots_blue[min_dist_blue_robot_index].y+robots_radius > ball.y and math.atan(robots_blue[min_dist_blue_robot_index].orientation)*(ball.x-robots_blue[min_dist_blue_robot_index].x)+robots_blue[min_dist_blue_robot_index].y-robots_radius < ball.y:
-                                    if min(ball_to_bluerobots_distance) < holding_distance*holding_distance and min(ball_to_bluerobots_distance) < min(ball_to_yellowrobots_distance):
-                                        blue_possession_time+=1.0
-                                        holding_num.append(robots_blue[min_dist_blue_robot_index].robot_id)
-                                        if holding_num.count(robots_blue[min_dist_blue_robot_index].robot_id) >=10:
-                                            print("blue",min_dist_blue_robot_index)
-                                            ball_holding_robot.append([robots_blue[min_dist_blue_robot_index].robot_id,balls[0].x,balls[0].y,blue_possession_time,yellow_possession_time,game_time])
-                                            holding_num.clear()
-                            min_dist_blue_robot_index=-1
-                            ball_to_bluerobots_distance.clear()
-                            ball_to_bluerobots_id.clear()
-                            
-                        if robots_yellow:
-                            for i in range(len(robots_yellow)):
-                                ball_to_yellowrobots_distance.append((robots_yellow[i].x-ball.x)**2+(robots_yellow[i].y-ball.y)**2)
-                                ball_to_yellowrobots_id.append(robots_yellow[i].robot_id)
-                            if ball_to_yellowrobots_distance:
-                                min_dist_yellow_robot_index=ball_to_yellowrobots_distance.index(min(ball_to_yellowrobots_distance))
-                            if 0 <= min_dist_yellow_robot_index < len(robots_yellow):
-                                if math.atan(robots_yellow[min_dist_yellow_robot_index].orientation)*(ball.x-robots_yellow[min_dist_yellow_robot_index].x)+robots_yellow[min_dist_yellow_robot_index].y+robots_radius > ball.y and math.atan(robots_yellow[min_dist_yellow_robot_index].orientation)*(ball.x-robots_yellow[min_dist_yellow_robot_index].x)+robots_yellow[min_dist_yellow_robot_index].y-robots_radius < ball.y:
-                                    if min(ball_to_yellowrobots_distance) < holding_distance*holding_distance and min(ball_to_yellowrobots_distance) < min(ball_to_bluerobots_distance):
+                        if robot:
+                            for i in range(len(robot)):
+                                ball_to_robots_distance.append((robot[i].x-ball.x)**2+(robot[i].y-ball.y)**2)
+                                ball_to_robots_id.append(robot[i].robot_id)
+                            if ball_to_robots_distance:
+                                min_dist_robot_index=ball_to_robots_distance.index(min(ball_to_robots_distance))
+                            if 0 <= min_dist_robot_index < len(robot):
+                                if math.atan(robot[min_dist_robot_index].orientation)*(ball.x-robot[min_dist_robot_index].x)+robot[min_dist_robot_index].y+robots_radius > ball.y and math.atan(robot[min_dist_robot_index].orientation)*(ball.x-robot[min_dist_robot_index].x)+robot[min_dist_robot_index].y-robots_radius < ball.y:
+                                    if min(ball_to_robots_distance) < holding_distance*holding_distance :
                                         yellow_possession_time+=1.0
-                                        holding_num.append(robots_yellow[min_dist_yellow_robot_index].robot_id)
-                                        if holding_num.count(robots_yellow[min_dist_yellow_robot_index].robot_id) >=10:
-                                            print("yellow",min_dist_yellow_robot_index)
-                                            ball_holding_robot.append([robots_yellow[min_dist_yellow_robot_index].robot_id,balls[0].x,balls[0].y,blue_possession_time,yellow_possession_time,game_time])
+                                        holding_num.append(robot[min_dist_robot_index].robot_id)
+                                        if holding_num.count(robot[min_dist_robot_index].robot_id) >=10:
+                                            #print("yellow",min_dist_robot_index) if team_name=="yellow" else print("blue",min_dist_robot_index)
+                                            ball_holding_robot.append([min(ball_to_robots_distance), robot[min_dist_robot_index], balls[0].x, balls[0].y, count_game_time("yellow")])
                                             holding_num.clear()
-                        min_dist_yellow_robot_index=-1
-                        ball_to_yellowrobots_distance.clear()
-                        ball_to_yellowrobots_id.clear()
-                    
-                                            
-                df = pd.DataFrame(ball_holding_robot, columns=["robot_id","ball_holding_place_x" ,"ball_holding_place_y","blue_possession_time", "yellow_possession_time", "game_time"])
-                df = df.sort_values("game_time")
-                df.to_csv(possessionPath, header=True, index=False)
+                                            return [min(ball_to_robots_distance), robot[min_dist_robot_index], balls[0].x, balls[0].y, count_game_time("yellow")]
+                        min_dist_robot_index=-1
+                        ball_to_robots_distance.clear()
+                        ball_to_robots_id.clear()
         except KeyboardInterrupt:
             break
-        except Exception as e:
-                print("RefereeMessage デコードエラー:", e)
-                print("b=",min_dist_blue_robot_index)
-                print("y=",min_dist_yellow_robot_index)
 
-    udp.close()
+def judge_possesion():
+    holding_data=[]
+    while not stop_event.is_set():
+        try:
+            if receive_game_controller_signal() in Game_on:
+                blue=possession("blue")
+                yellow=possession("yellow")
+                if blue and yellow:
+                    if blue[0] < yellow[0]:
+                        holding_data.append(blue)
+                        print("holding",holding_data)
+                        df=pd.DataFrame(holding_data,columns=["dist","robot_data","ball_x","ball_y","time"])
+                        df.to_csv(possessionPath,header=True,index=False)
+                    else:
+                        holding_data.append(yellow)
+                        print("holding",holding_data.)
+                        df=pd.DataFrame(holding_data,columns=["dist","robot_data","ball_x","ball_y","time"])
+                        df.to_csv(possessionPath,header=True,index=False)
+        except KeyboardInterrupt:
+            break
+    return 0    
 
 if __name__ == "__main__":
     setup_socket()
     # スレッドを作成して、両方の関数を並行して実行
     thread1 = threading.Thread(target=receive_game_controller_signal)
     thread2 = threading.Thread(target=track_ball_position)
-    thread3 = threading.Thread(target=possession)
+    thread3 = threading.Thread(target=judge_possesion)
 
     thread1.start()
     thread2.start()
@@ -234,5 +232,6 @@ if __name__ == "__main__":
         thread2.join()
         thread3.join()
 
+    udp.close()
     sock.close()
     print("ソケットを閉じました")
