@@ -150,8 +150,8 @@ def possession():
     holding_num=[]
     ball_holding_robot=[]
     
-    robots_radius=80
-    holding_distance=50
+    robots_radius=800
+    holding_distance=15000
     
     
     
@@ -190,9 +190,10 @@ def possession():
                                             print("blue",min_dist_blue_robot_index)
                                             ball_holding_robot.append([robots_blue[min_dist_blue_robot_index].robot_id,balls[0].x,balls[0].y,blue_possession_time,yellow_possession_time,game_time])
                                             holding_num.clear()
-                            min_dist_blue_robot_index=0
-                            ball_to_bluerobots_distance=[1000]*len(robots_blue)
-                            ball_to_bluerobots_id=[0]*len(robots_blue)
+                            min_dist_blue_robot_index=-1
+                            ball_to_bluerobots_distance.clear()
+                            ball_to_bluerobots_id.clear()
+                            
                         if robots_yellow:
                             for i in range(len(robots_yellow)):
                                 ball_to_yellowrobots_distance.append((robots_yellow[i].x-ball.x)**2+(robots_yellow[i].y-ball.y)**2)
@@ -208,9 +209,9 @@ def possession():
                                             print("yellow",min_dist_yellow_robot_index)
                                             ball_holding_robot.append([robots_yellow[min_dist_yellow_robot_index].robot_id,balls[0].x,balls[0].y,blue_possession_time,yellow_possession_time,game_time])
                                             holding_num.clear()
-                            min_dist_yellow_robot_index=0
-                            ball_to_yellowrobots_distance=[1000]*len(robots_yellow)
-                            ball_to_yellowrobots_id=[0]*len(robots_yellow)
+                        min_dist_yellow_robot_index=-1
+                        ball_to_yellowrobots_distance.clear()
+                        ball_to_yellowrobots_id.clear()
                     
                                             
                 df = pd.DataFrame(ball_holding_robot, columns=["robot_id","ball_holding_place_x" ,"ball_holding_place_y","blue_possession_time", "yellow_possession_time", "game_time"])
