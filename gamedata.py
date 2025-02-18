@@ -23,7 +23,7 @@ blue_possession_time=0.0
 yellow_possession_time=0.0
 robots_radius=800
 holding_distance=15000
-
+lock = threading.Lock()
 
 local = "127.0.0.1"
 multicast = "224.5.23.2"
@@ -126,12 +126,13 @@ def store_ball_position():
 
 def count_game_time(name):
     global game_time, blue_possession_time, yellow_possession_time, count
-    if receive_game_controller_signal() in Game_on:
-        if name == "blue":
-            blue_possession_time+=1.0
-        elif name == "yellow":
-            yellow_possession_time+=1.0 
-        game_time+=1.0
+    with lock:
+        if receive_game_controller_signal() in Game_on:
+            if name == "b":
+                blue_possession_time+=1.0
+            elif name == "y":
+                yellow_possession_time+=1.0 
+            game_time+=1.0
         return [game_time, blue_possession_time, yellow_possession_time]
 
 def possession(team_name):
@@ -157,9 +158,9 @@ def possession(team_name):
                 game_time+=1.0
                 if frame:
                     #print("frame: ", frame)
-                    if team_name == "blue":
+                    if team_name == "b":
                         robot = frame.robots_blue
-                    elif team_name == "yellow":
+                    elif team_name == "y":
                         robot = frame.robots_yellow
                     balls = frame.balls
                     #print(robots_blue)
@@ -180,9 +181,9 @@ def possession(team_name):
                                         holding_num.append(robot[min_dist_robot_index].robot_id)
                                         if holding_num.count(robot[min_dist_robot_index].robot_id) >=10:
                                             #print("yellow",min_dist_robot_index) if team_name=="yellow" else print("blue",min_dist_robot_index)
-                                            ball_holding_robot.append([min(ball_to_robots_distance), robot[min_dist_robot_index], balls[0].x, balls[0].y, count_game_time("yellow")])
+                                            ball_holding_robot.append([min(ball_to_robots_distance), robot[min_dist_robot_index], balls[0].x, balls[0].y, count_game_time(team_name)])
                                             holding_num.clear()
-                                            return [min(ball_to_robots_distance), robot[min_dist_robot_index].index, balls[0].x, balls[0].y, count_game_time("yellow")]
+                                            return [min(ball_to_robots_distance), robot[min_dist_robot_index], balls[0].x, balls[0].y, count_game_time(team_name)]
                         min_dist_robot_index=-1
                         ball_to_robots_distance.clear()
                         ball_to_robots_id.clear()
@@ -194,21 +195,25 @@ def judge_possesion():
     while not stop_event.is_set():
         try:
             if receive_game_controller_signal() in Game_on:
-                blue=possession("blue")
-                yellow=possession("yellow")
+                yellow = possession("y")
+                blue = possession("b")
+
                 if blue and yellow:
-                    if blue[0] < yellow[0]:
-                        holding_data.append(blue[1])
-                        print("holding",holding_data)
-                        df=pd.DataFrame(holding_data,columns=["dist","robot_data","ball_x","ball_y","time"])
-                        df.to_csv(possessionPath,header=True,index=False)
+                    if blue[0] < yellow[0]:  # どちらがボールを保持しているか判定
+                        holding_data.append([blue[0], blue[1].robot_id, blue[1].x, blue[1].y, blue[2], blue[3], blue[4]])
                     else:
-                        holding_data.append(yellow[1])
-                        print("holding",holding_data)
-                        df=pd.DataFrame(holding_data,columns=["dist","robot_data","ball_x","ball_y","time"])
-                        df.to_csv(possessionPath,header=True,index=False)
+                        holding_data.append([yellow[0], yellow[1].robot_id, yellow[1].x, yellow[1].y, yellow[2], yellow[3], yellow[4]])
+                    # データを CSV に保存
+                if holding_data:
+                    df = pd.DataFrame(holding_data, columns=["dist", "robot_id", "robot_x", "robot_y", "ball_x", "ball_y", "time"])
+                    df.to_csv(possessionPath, header=True, index=False)
+                    # デバッグ出力
+                    #print("holding data:", holding_data[-1])  # 最新のデータのみ表示
         except KeyboardInterrupt:
             break
+#       except Exception as e:
+#            print("Error: ", e)
+            #print("blue",blue[1],blue[2],blue[3],blue[4])
     return 0    
 
 if __name__ == "__main__":
