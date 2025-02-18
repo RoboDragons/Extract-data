@@ -23,7 +23,7 @@ blue_possession_time=0.0
 yellow_possession_time=0.0
 robots_radius=800
 holding_distance=15000
-    
+
 
 local = "127.0.0.1"
 multicast = "224.5.23.2"
@@ -182,7 +182,7 @@ def possession(team_name):
                                             #print("yellow",min_dist_robot_index) if team_name=="yellow" else print("blue",min_dist_robot_index)
                                             ball_holding_robot.append([min(ball_to_robots_distance), robot[min_dist_robot_index], balls[0].x, balls[0].y, count_game_time("yellow")])
                                             holding_num.clear()
-                                            return [min(ball_to_robots_distance), robot[min_dist_robot_index], balls[0].x, balls[0].y, count_game_time("yellow")]
+                                            return [min(ball_to_robots_distance), robot[min_dist_robot_index].index, balls[0].x, balls[0].y, count_game_time("yellow")]
                         min_dist_robot_index=-1
                         ball_to_robots_distance.clear()
                         ball_to_robots_id.clear()
@@ -198,12 +198,12 @@ def judge_possesion():
                 yellow=possession("yellow")
                 if blue and yellow:
                     if blue[0] < yellow[0]:
-                        holding_data.append(blue)
+                        holding_data.append(blue[1])
                         print("holding",holding_data)
                         df=pd.DataFrame(holding_data,columns=["dist","robot_data","ball_x","ball_y","time"])
                         df.to_csv(possessionPath,header=True,index=False)
                     else:
-                        holding_data.append(yellow)
+                        holding_data.append(yellow[1])
                         print("holding",holding_data)
                         df=pd.DataFrame(holding_data,columns=["dist","robot_data","ball_x","ball_y","time"])
                         df.to_csv(possessionPath,header=True,index=False)
