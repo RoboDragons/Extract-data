@@ -154,6 +154,7 @@ def possession(team_name):
 
             frame = packet.detection
             if receive_game_controller_signal() in Game_on:
+                
                 if frame:
                     #print("frame: ", frame)
                     if team_name == "b":
@@ -198,10 +199,10 @@ def judge_possesion():
 
                 if blue and yellow:
                     if blue[0] < yellow[0]:  # どちらがボールを保持しているか判定
-                        holding_data.append([blue[0], blue[1].robot_id, blue[1].x, blue[1].y, blue[2], blue[3], blue[4]])
+                        holding_data.append(["blue",blue[0], blue[1].robot_id, blue[1].x, blue[1].y, blue[2], blue[3], blue[4]])
                         return ("blue")
                     else:
-                        holding_data.append([yellow[0], yellow[1].robot_id, yellow[1].x, yellow[1].y, yellow[2], yellow[3], yellow[4]])
+                        holding_data.append(["yellow",yellow[0], yellow[1].robot_id, yellow[1].x, yellow[1].y, yellow[2], yellow[3], yellow[4]])
                         return("yellow")
                     # データを CSV に保存
                 if holding_data:
