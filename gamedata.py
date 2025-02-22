@@ -56,7 +56,6 @@ def setup_socket():
 def receive_game_controller_signal():
     global sock
     buffer_size = 4096  # バッファサイズ データの受け取るお皿の大きさ
-
     try:
         while not stop_event.is_set():
             data, address = sock.recvfrom(buffer_size)  # データ受信
@@ -136,7 +135,7 @@ def count_game_time(name):
         return [game_time, blue_possession_time, yellow_possession_time]
 
 def possession(team_name):
-    global game_time, blue_possession_time, yellow_possession_time, udp, path, possessionPath,robots_radius,holding_distance
+    global blue_possession_time, yellow_possession_time, udp, path, possessionPath,robots_radius,holding_distance
     possessionPath = path + "possession.csv"
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -155,7 +154,6 @@ def possession(team_name):
 
             frame = packet.detection
             if receive_game_controller_signal() in Game_on:
-                game_time+=1.0
                 if frame:
                     #print("frame: ", frame)
                     if team_name == "b":
@@ -201,8 +199,10 @@ def judge_possesion():
                 if blue and yellow:
                     if blue[0] < yellow[0]:  # どちらがボールを保持しているか判定
                         holding_data.append([blue[0], blue[1].robot_id, blue[1].x, blue[1].y, blue[2], blue[3], blue[4]])
+                        return ("blue")
                     else:
                         holding_data.append([yellow[0], yellow[1].robot_id, yellow[1].x, yellow[1].y, yellow[2], yellow[3], yellow[4]])
+                        return("yellow")
                     # データを CSV に保存
                 if holding_data:
                     df = pd.DataFrame(holding_data, columns=["dist", "robot_id", "robot_x", "robot_y", "ball_x", "ball_y", "time"])
@@ -216,6 +216,24 @@ def judge_possesion():
             #print("blue",blue[1],blue[2],blue[3],blue[4])
     return 0    
 
+def count_pass():
+    pass_data=[]
+    count_pass_num=["blue", "yellow",0,0]
+    pass_data.append(judge_possesion())
+    if pass_data:
+        if pass_data.__len__() >3:
+            pass_data.clear()
+        if pass_data.len() == 2:
+            if pass_data[0] == pass_data[1]:
+                if pass_data[0] == "blue":
+                    count_pass_num[2]+=1
+                else:
+                    count_pass_num[3]+=1
+        if count_pass_num:
+            df = pd.DataFrame(count_pass_num, columns=["team", "pass_num"])
+            df.to_csv(path + "pass.csv", header=True, index=False)
+        return count_pass_num
+    
 if __name__ == "__main__":
     setup_socket()
     # スレッドを作成して、両方の関数を並行して実行
