@@ -10,7 +10,7 @@ field_x_min, field_x_max = -6000, 6000  # X軸の範囲
 field_y_min, field_y_max = -4500, 4500  # Y軸の範囲
 
 # マス目のサイズを調整（200mm x 200mm に変更）
-grid_size = 200  
+grid_size = 100
 
 # ヒストグラムのビン数を再計算
 bins_x = (field_x_max - field_x_min) // grid_size  # 60
@@ -32,11 +32,18 @@ heatmap_data, xedges, yedges = np.histogram2d(
     x, y, bins=[bins_x, bins_y], range=[[field_x_min, field_x_max], [field_y_min, field_y_max]]
 )
 
+# データの偏りを軽減するために対数変換を適用
+heatmap_data = np.log1p(heatmap_data)
+
+# # しきい値を適用
+# X = 10
+# heatmap_data[heatmap_data > X] = X
+
 # ヒートマップの描画
 plt.figure(figsize=(12, 9))  # 4:3の比率
 ax = sns.heatmap(
     heatmap_data.T, cmap="coolwarm", cbar=True, xticklabels=True, yticklabels=True, center=0,
-    cbar_kws={'label': 'Ball Density'}
+    cbar_kws={'label': 'Ball Density (log scale)'}
 )
 
 # X 軸ラベルを設定
