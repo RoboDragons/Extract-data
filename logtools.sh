@@ -27,33 +27,11 @@ while true; do
     fi
 done
 
-# 実行するタスクを選択
-echo "実行する処理を選択してください:"
-echo "1) AutoRefereeのビルドと実行"
-echo "2) CSVファイルの出力"
-echo "3) 両方実行"
-echo "4) 何もしない"
-
-while true; do
-    read -p "番号を入力してください: " task_choice
-    if [[ "$task_choice" =~ ^[1-4]$ ]]; then
-        break
-    else
-        echo "無効な入力です。正しい番号を入力してください。"
-    fi
-done
-
 # SSL-logtoolの起動
 gnome-terminal --tab -- bash -c "cd $HOME/Extract-data/ssl-logtools/build && bin/logplayer '$filename'; exec bash" &
 
-# 選択されたタスクの実行
-if [[ "$task_choice" == "1" || "$task_choice" == "3" ]]; then
-    gnome-terminal --tab -- bash -c "cd $HOME/Extract-data/AutoReferee && ./build.sh && ./run.sh; exec bash" &
-fi
-
-if [[ "$task_choice" == "2" || "$task_choice" == "3" ]]; then
-    gnome-terminal --tab -- bash -c "cd $HOME/Extract-data && python3 gamesituation.py; exec bash" &
-fi
+# AutoRefereeのビルドと実行
+gnome-terminal --tab -- bash -c "cd $HOME/Extract-data/AutoReferee && ./build.sh && ./run.sh; exec bash" &
 
 # # 新しいターミナルでSSL Game Controllerを実行
 # gnome-terminal --tab -- bash -c "$HOME/Extract-data/ssl-game-controller_v3.12.8_linux_amd64; exec bash" &
