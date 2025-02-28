@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 import time
 import messages_robocup_ssl_wrapper_pb2
-import ssl_gc_state_pb2
-import ssl_gc_engine_pb2
 import ssl_gc_referee_message_pb2
 import math
 
@@ -24,6 +22,10 @@ yellow_possession_time=0.0
 robots_radius=800
 holding_distance=15000
 lock = threading.Lock()
+balls_position = []
+frame = []
+robots_yellow = []
+robots_blue = []
 
 local = "127.0.0.1"
 multicast = "224.5.23.2"
@@ -93,13 +95,22 @@ def track_ball_position():
                 print("frame: ", frame)
             if frame:
                 balls = frame.balls
-                if balls:
+                robots_blue=frame.robots_blue
+                #print("robots_blue: ", robots_blue[0].x)
+                robots_yellow=frame.robots_yellow              
+                if balls and robots_blue and robots_yellow:
                     ball = balls[0]
+                    # robot_blue =[[],[],[],[],[],
+                    #              [],[],[],[],[]]
+                    # robot_yellow =[[],[],[],[],[],
+                    #                [],[],[],[],[]]
+                    # robot_yellow =
                     
                     if receive_game_controller_signal() in Game_on:
                         #print("here")
                         if frame.frame_number % 10 == 0:
-                            balls_position = [int(ball.x) / 10, int(ball.y) / 10, receive_game_controller_signal()]
+                            balls_position.append([int(ball.x) / 10, int(ball.y) / 10, receive_game_controller_signal()])
+                            #print("ball_position: ", balls_position)
                             return balls_position
     
         except KeyboardInterrupt:
@@ -121,6 +132,81 @@ def store_ball_position():
             if debug:
                 print("ball_position: ", ball_position)
                 print("\n")
+        except KeyboardInterrupt:
+            break
+
+# def track_robot_position():
+#     global udp
+#     robotPath = path + "robot_position.csv"
+#     while not stop_event.is_set():
+#         try:
+#             packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
+#             data, _ = udp.recvfrom(buffer)
+#             packet.ParseFromString(data)
+#             frame = []
+#             frame = packet.detection
+            
+#             yellow = [0] * 35
+            
+#             if frame:
+#                 for i in frame.robots_yellow:
+#                     yellow[i.robot_id*2+1] = i.x
+#                     yellow[i.robot_id*2+2] = i.y
+#                     frame.append(yellow)
+#                     time.sleep(0.001)
+
+#             ###==== ログの保存 ====###
+#             if not os.path.isdir(robotPath):
+#                 os.mkdir(robotPath)
+#             if frame:
+#                 columns_ = []
+#                 for i in range(len(yellow)):
+#                     if i % 2 == 1:
+#                         columns_.append(str(i) + "p_x")
+#                     if i % 2 == 0:
+#                         columns_.append(str(i) + "p_y")
+
+#                 if receive_game_controller_signal() in Game_on:
+#                     df = pd.DataFrame(frame, columns=columns_)
+#                     df.to_csv(robotPath, header=True, index=False)
+
+#         except KeyboardInterrupt:
+#             break
+def track_robot_position():
+    global udp
+    robotPath = path+ "robot_position.csv" # フルパスで保存
+    if not os.path.isdir(path):
+                os.mkdir(path)
+    while not stop_event.is_set():
+        try:
+            packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
+            data, _ = udp.recvfrom(buffer)
+            packet.ParseFromString(data)
+            robots_yellow=packet.detection.robots_yellow
+            robots_blue=packet.detection.robots_blue
+
+            if robots_yellow and robots_blue:  # ちゃんとデータがあるかチェック  
+                robot = [0] * 35
+                for i in robots_yellow:
+                    if 0 <= i.robot_id < 17:  # IDが範囲外にならないようチェック
+                        robot[i.robot_id] = i.x
+                        robot[i.robot_id+1] = i.y
+                for i in robots_blue:
+                    if 0 <= i.robot_id < 17:
+                        robot[i.robot_id+17] = i.x
+                        robot[i.robot_id+17] = i.y
+                        
+                
+                frame.append(robot)  # データを追加
+
+                ###==== ログの保存 ====###
+                columns_ = [f"{i/2}{'blue_' if i<17 else 'yellow_'}{'x' if i % 2 == 1 else 'y'}" for i in range(len(robot))]
+
+                if receive_game_controller_signal() in Game_on:
+                    print("frame: ", frame)
+                    df = pd.DataFrame(frame, columns=columns_)
+                    df.to_csv(robotPath, header=True, index=False)
+
         except KeyboardInterrupt:
             break
 
@@ -214,28 +300,31 @@ def judge_possesion():
 #       except Exception as e:
 #            print("Error: ", e)
             #print("blue",blue[1],blue[2],blue[3],blue[4])
-    return 0    
-
+    return 0               
 if __name__ == "__main__":
     setup_socket()
     # スレッドを作成して、両方の関数を並行して実行
     thread1 = threading.Thread(target=receive_game_controller_signal)
-    thread2 = threading.Thread(target=track_ball_position)
+    thread2 = threading.Thread(target=store_ball_position)
     thread3 = threading.Thread(target=judge_possesion)
+    thread4 = threading.Thread(target=track_robot_position)
 
     thread1.start()
     thread2.start()
     thread3.start()
+    thread4.start()
 
     try:
         thread1.join()
         thread2.join()
         thread3.join()
+        thread4.join()
     except KeyboardInterrupt:
         stop_event.set()
         thread1.join()
         thread2.join()
         thread3.join()
+        thread4.join()
 
     udp.close()
     sock.close()
