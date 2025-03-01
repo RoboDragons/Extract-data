@@ -26,6 +26,7 @@ balls_position = []
 frame = []
 robots_yellow = []
 robots_blue = []
+robot = [0] * 68
 
 local = "127.0.0.1"
 multicast = "224.5.23.2"
@@ -184,26 +185,32 @@ def track_robot_position():
             packet.ParseFromString(data)
             robots_yellow=packet.detection.robots_yellow
             robots_blue=packet.detection.robots_blue
-
+            frame_number = packet.detection.frame_number
+            
             if robots_yellow and robots_blue:  # ちゃんとデータがあるかチェック  
-                robot = [0] * 35
-                for i in robots_yellow:
-                    if 0 <= i.robot_id < 17:  # IDが範囲外にならないようチェック
-                        robot[i.robot_id] = i.x
-                        robot[i.robot_id+1] = i.y
-                for i in robots_blue:
-                    if 0 <= i.robot_id < 17:
-                        robot[i.robot_id+17] = i.x
-                        robot[i.robot_id+17] = i.y
+                for yellow_robot in robots_yellow:
+                    if 0 <= yellow_robot.robot_id < 17:  # IDが範囲外にならないようチェック
+                        #print("yellow_robot: ", yellow_robot.robot_id)
+                        robot[yellow_robot.robot_id*2+1] = yellow_robot.x
+                        robot[yellow_robot.robot_id*2+2] = yellow_robot.y
+                        #robot[yellow_robot.robot_id] = yellow_robot.robot_id
+
+                    break
+                for blue_robot in robots_blue:
+                    if 0 <= blue_robot.robot_id < 17:
+                        #print("blue_robot: ", blue_robot.robot_id)
+                        robot[blue_robot.robot_id*2+35] = blue_robot.x
+                        robot[blue_robot.robot_id*2+36] = blue_robot.y
                         
                 
                 frame.append(robot)  # データを追加
 
                 ###==== ログの保存 ====###
-                columns_ = [f"{i/2}{'blue_' if i<17 else 'yellow_'}{'x' if i % 2 == 1 else 'y'}" for i in range(len(robot))]
+                columns_ = [f"{int(i/2)if i<17 else int(i/2-8)}{'blue_' if i>17 else 'yellow_'}{'x' if i % 2 == 0 else 'y'}" for i in range(len(robot))]
 
-                if receive_game_controller_signal() in Game_on:
-                    print("frame: ", frame)
+                if receive_game_controller_signal() in Game_on and frame_number % 5 == 0:
+                    #print("frame: ", frame)
+                    print("yellow_robot: ", yellow_robot.robot_id)
                     df = pd.DataFrame(frame, columns=columns_)
                     df.to_csv(robotPath, header=True, index=False)
 
