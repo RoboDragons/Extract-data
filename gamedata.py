@@ -25,6 +25,10 @@ lock = threading.Lock()
 balls_position = []
 robots_yellow = []
 robots_blue = []
+poji_goal_x=5990
+poji_goal_y=900
+nega_goal_x=-5990
+nega_goal_y=-900
 
 
 local = "127.0.0.1"
@@ -108,8 +112,9 @@ def track_ball_position():
                     
                     if receive_game_controller_signal() in Game_on:
                         #print("here")
-                        if frame.frame_number % 10 == 0:
-                            balls_position.append([int(ball.x) / 10, int(ball.y) / 10, receive_game_controller_signal()])
+                        # if frame.frame_number % 2 == 0:
+                            # balls_position.append([int(ball.x) / 10, int(ball.y) / 10, receive_game_controller_signal()])
+                            balls_position.append([int(ball.x) , int(ball.y), receive_game_controller_signal()])
                             #print("ball_position: ", balls_position)
                             return balls_position
     
@@ -208,15 +213,42 @@ def track_robot_position():
                 ###==== ログの保存 ====###
                 columns_ = [f"{int(i/2)if i<17 else int(i/2-8)}{'blue_' if i>17 else 'yellow_'}{'x' if i % 2 == 0 else 'y'}" for i in range(len(robot))]
                 
-                if receive_game_controller_signal() in Game_on and frame_number % 37 == 0:
+                if receive_game_controller_signal() in Game_on:# and frame_number % 2 == 0:
                     #print("frame: ", frame)
                     #print("yellow_robot: ", yellow_robot.robot_id)
                     df = pd.DataFrame(frame, columns=columns_)
                     df.to_csv(robotPath, header=True, index=False)
+                    return frame
 
         except KeyboardInterrupt:
             break
 
+def goal_scene():
+        robot_poji_goal_path = path + "robot_position_goal.csv"
+        if not os.path.isdir(path):
+                os.mkdir(path)
+        #if robot_poji and 14 == receive_game_controller_signal() or 15 == receive_game_controller_signal():
+        while not stop_event.is_set():
+            try:
+                balls_position=track_ball_position()
+                robot_poji = track_robot_position()
+                #print("balls_position",balls_position)
+                ball_x, ball_y, state = balls_position[-1]
+                columns_ = [f"{int(i/2)if i<17 else int(i/2-8)}{'blue_' if i>17 else 'yellow_'}{'x' if i % 2 == 0 else 'y'}" for i in range(len(robot_poji[-1]))]
+                if state in Game_on:
+                    print("ball_x",ball_x)
+                # print("ball_y",ball_y)
+                if ball_x>6000:
+                    print("poji_goal")
+                # print("poji_goal",(ball_x>poji_goal_x and (ball_y<poji_goal_y and ball_y>nega_goal_y)))
+                # print("nega_goal",(ball_x<nega_goal_x and (ball_y<poji_goal_y and ball_y>nega_goal_y)))
+                if robot_poji and ((ball_x>poji_goal_x and (ball_y<poji_goal_y and ball_y>nega_goal_y)) or (ball_x<nega_goal_x and (ball_y<poji_goal_y and ball_y>nega_goal_y))):
+                        print("poji_goal",(ball_x>poji_goal_x and (ball_y<poji_goal_y and ball_y>nega_goal_y)))
+                        print("nega_goal",(ball_x<nega_goal_x and (ball_y<poji_goal_y and ball_y>nega_goal_y)))
+                        df = pd.DataFrame(robot_poji, columns=columns_)
+                        df.to_csv(robot_poji_goal_path, header=True, index=False)
+            except KeyboardInterrupt:
+                break
 def count_game_time(name):
     global game_time, blue_possession_time, yellow_possession_time, count
     with lock:
@@ -314,24 +346,28 @@ if __name__ == "__main__":
     thread1 = threading.Thread(target=receive_game_controller_signal)
     thread2 = threading.Thread(target=store_ball_position)
     thread3 = threading.Thread(target=judge_possesion)
-    thread4 = threading.Thread(target=track_robot_position)
+    #thread4 = threading.Thread(target=track_robot_position)
+    thread5 = threading.Thread(target=goal_scene)
 
     thread1.start()
     thread2.start()
     thread3.start()
-    thread4.start()
+    #thread4.start()
+    thread5.start()
 
     try:
         thread1.join()
         thread2.join()
         thread3.join()
-        thread4.join()
+        #thread4.join()
+        thread5.join()
     except KeyboardInterrupt:
         stop_event.set()
         thread1.join()
         thread2.join()
         thread3.join()
-        thread4.join()
+        #thread4.join()
+        thread5.join()
 
     udp.close()
     sock.close()
