@@ -345,8 +345,11 @@ def balldense():
         os.mkdir(path)
     
     ball_dense = []
+    ball_dense_distance = 500
     ball_posi=track_ball_position()
     robots_posi= track_robot_position()
+    num_near_bluerobot=0
+    num_near_yellowrobot=0
     blue_robot=robots_posi[34:]
     yellow_robot=robots_posi[:34]
     blue_robot_to_ball_distance=[]
@@ -357,6 +360,17 @@ def balldense():
     for i in range(len(yellow_robot)):
         yellow_robot_to_ball_distance.append((yellow_robot[i]-ball_posi[0])**2+(yellow_robot[i+1]-ball_posi[1])**2)
         print("yellow",yellow_robot_to_ball_distance)
+    for i in range(len(blue_robot)):
+        if blue_robot_to_ball_distance[i] < ball_dense_distance*ball_dense_distance:
+            num_near_bluerobot+=1
+            ball_dense.append([num_near_bluerobot, num_near_yellowrobot])
+    for i in range(len(yellow_robot)):
+        if yellow_robot_to_ball_distance[i] < ball_dense_distance*ball_dense_distance:
+            num_near_yellowrobot+=1
+            ball_dense.append([num_near_bluerobot, num_near_yellowrobot])
+    if ball_dense:
+        return ball_dense
+        
         
 if __name__ == "__main__":
     setup_socket()
