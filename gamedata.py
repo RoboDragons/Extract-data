@@ -23,7 +23,9 @@ robots_radius=800
 holding_distance=15000
 lock = threading.Lock()
 robots_yellow = []
+robots_yellow=None
 robots_blue = []
+robots_blue=None
 poji_goal_x=5990
 poji_goal_y=900
 nega_goal_x=-5990
@@ -162,7 +164,6 @@ def store_ball_position():
 #         except KeyboardInterrupt:
 #             break
 def track_robot_position():
-    global udp
     robot = [0] * 68
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -172,24 +173,21 @@ def track_robot_position():
     robots_yellow = packet.detection.robots_yellow
     robots_blue = packet.detection.robots_blue
     
-    if robots_yellow and robots_blue:  # ちゃんとデータがあるかチェック  
+    if robots_yellow:  # ちゃんとデータがあるかチェック  
         for yellow_robot in robots_yellow:
             if 0 <= yellow_robot.robot_id < 17:  # IDが範囲外にならないようチェック
                 #print("yellow_robot: ", yellow_robot.robot_id)
                 robot[yellow_robot.robot_id*2] = yellow_robot.x
                 robot[yellow_robot.robot_id*2+1] = yellow_robot.y
                 #robot[yellow_robot.robot_id] = yellow_robot.robot_id
-
-            break
+    if robots_blue:
         for blue_robot in robots_blue:
             if 0 <= blue_robot.robot_id < 17:
                 robot[blue_robot.robot_id * 2 + 34] = blue_robot.x
                 robot[blue_robot.robot_id * 2 + 35] = blue_robot.y
         # print("robo",robot)
-        if robot:
-            return robot.copy()
-        else:
-            return []
+    if robot:
+        return robot.copy()
     
 def store_robot_position():
     a=[]
@@ -339,6 +337,7 @@ def judge_possesion():
 #            print("Error: ", e)
             #print("blue",blue[1],blue[2],blue[3],blue[4])
     return 0               
+
 if __name__ == "__main__":
     setup_socket()
     # スレッドを作成して、両方の関数を並行して実行
