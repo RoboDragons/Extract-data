@@ -338,6 +338,26 @@ def judge_possesion():
             #print("blue",blue[1],blue[2],blue[3],blue[4])
     return 0               
 
+def balldense():
+    global udp, path, ball_dense_path
+    ball_dense_path = path + "ball_dense.csv"
+    if not os.path.isdir(path):
+        os.mkdir(path)
+    
+    ball_dense = []
+    ball_posi=track_ball_position()
+    robots_posi= track_robot_position()
+    blue_robot=robots_posi[34:]
+    yellow_robot=robots_posi[:34]
+    blue_robot_to_ball_distance=[]
+    yellow_robot_to_ball_distance=[]
+    for i in range(len(blue_robot)):
+        blue_robot_to_ball_distance.append((blue_robot[i]-ball_posi[0])**2+(blue_robot[i+1]-ball_posi[1])**2)
+        print("blue",blue_robot_to_ball_distance)
+    for i in range(len(yellow_robot)):
+        yellow_robot_to_ball_distance.append((yellow_robot[i]-ball_posi[0])**2+(yellow_robot[i+1]-ball_posi[1])**2)
+        print("yellow",yellow_robot_to_ball_distance)
+        
 if __name__ == "__main__":
     setup_socket()
     # スレッドを作成して、両方の関数を並行して実行
@@ -346,12 +366,14 @@ if __name__ == "__main__":
     thread3 = threading.Thread(target=judge_possesion)
     thread4 = threading.Thread(target=store_robot_position)
     thread5 = threading.Thread(target=goal_scene)
+    thread6 = threading.Thread(target=balldense)
 
     thread1.start()
     thread2.start()
     thread3.start()
     thread4.start()
     thread5.start()
+    thread6.start()
 
     try:
         thread1.join()
@@ -359,6 +381,7 @@ if __name__ == "__main__":
         thread3.join()
         thread4.join()
         thread5.join()
+        thread6.join()
     except KeyboardInterrupt:
         stop_event.set()
         thread1.join()
@@ -366,6 +389,7 @@ if __name__ == "__main__":
         thread3.join()
         thread4.join()
         thread5.join()
+        thread6.join()
 
     udp.close()
     sock.close()
