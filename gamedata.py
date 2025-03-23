@@ -41,6 +41,31 @@ udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 udp.bind(addr)
 udp.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(multicast) + socket.inet_aton(local))
 
+def file_allocation():
+    global data_file
+    print("ファイルの割り当てを開始します")
+    file_list=os.listdir("out/")
+    print("ファイルのリスト"+str(file_list))
+    print("ファイルの名前を入力してください")
+    file_name = input()
+    data_file = file_name + ".csv"
+    path = './out/' + data_file
+        
+    if os.path.exists(path):
+        print("ファイルが存在します。")
+        data_file = file_name + ".csv"
+    else:
+        print("ファイルが見つかりません．ファイルを追加します")
+        store_file = './out/' + data_file
+        f = open(store_file, 'w')
+        f.write('')  # 何も書き込まなくてファイルは作成されました
+        f.close()
+    file_list=os.listdir("out/")
+    print("ファイルのリスト"+str(file_list))
+    if os.path.exists(path):
+        print("ファイルが追加されました。")
+    return path, data_file
+
 def setup_socket():
     global sock
     buffer_size = 4096  # バッファサイズ データの受け取るお皿の大きさ
@@ -124,43 +149,6 @@ def store_ball_position():
         except KeyboardInterrupt:
             break
 
-# def track_robot_position():
-#     global udp
-#     robotPath = path + "robot_position.csv"
-#     while not stop_event.is_set():
-#         try:
-#             packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-#             data, _ = udp.recvfrom(buffer)
-#             packet.ParseFromString(data)
-#             frame = []
-#             frame = packet.detection
-            
-#             yellow = [0] * 35
-            
-#             if frame:
-#                 for i in frame.robots_yellow:
-#                     yellow[i.robot_id*2+1] = i.x
-#                     yellow[i.robot_id*2+2] = i.y
-#                     frame.append(yellow)
-#                     time.sleep(0.001)
-
-#             ###==== ログの保存 ====###
-#             if not os.path.isdir(robotPath):
-#                 os.mkdir(robotPath)
-#             if frame:
-#                 columns_ = []
-#                 for i in range(len(yellow)):
-#                     if i % 2 == 1:
-#                         columns_.append(str(i) + "p_x")
-#                     if i % 2 == 0:
-#                         columns_.append(str(i) + "p_y")
-
-#                 if receive_game_controller_signal() in Game_on:
-#                     df = pd.DataFrame(frame, columns=columns_)
-#                     df.to_csv(robotPath, header=True, index=False)
-
-#         except KeyboardInterrupt:
-#             break
 def track_robot_position():
     global udp
     robot = [0] * 68
@@ -342,6 +330,7 @@ def judge_possesion():
 if __name__ == "__main__":
     setup_socket()
     # スレッドを作成して、両方の関数を並行して実行
+    file_allocation()
     thread1 = threading.Thread(target=receive_game_controller_signal)
     thread2 = threading.Thread(target=store_ball_position)
     thread3 = threading.Thread(target=judge_possesion)
