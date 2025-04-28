@@ -43,7 +43,6 @@ udp.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(mul
 
 packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
 
-    
 def setup_socket():
     global sock
     buffer_size = 4096  # バッファサイズ データの受け取るお皿の大きさ
@@ -65,8 +64,6 @@ def receive_packet():
     data, _ = udp.recvfrom(buffer)
     packet.ParseFromString(data)
     return packet
-    
-    
     
 def receive_game_controller_signal():
     global sock
@@ -135,57 +132,50 @@ def store_ball_position():
             break
 
 def track_robot_position():
-    global udp
-    robot = [0] * 68
     if not os.path.isdir(path):
         os.mkdir(path)
     packet = receive_packet()
-    
     robots_yellow = packet.detection.robots_yellow
     robots_blue = packet.detection.robots_blue
-    
-    if robots_yellow and robots_blue:  # ちゃんとデータがあるかチェック  
+    robot_positions = {"yellow": {}, "blue": {}}
+    if robots_yellow:
         for yellow_robot in robots_yellow:
-            if 0 <= yellow_robot.robot_id < 17:  # IDが範囲外にならないようチェック
-                #print("yellow_robot: ", yellow_robot.robot_id)
-                robot[yellow_robot.robot_id*2] = yellow_robot.x
-                robot[yellow_robot.robot_id*2+1] = yellow_robot.y
-                #robot[yellow_robot.robot_id] = yellow_robot.robot_id
-
-            break
+            if 0 <= yellow_robot.robot_id < 17:
+                robot_positions["yellow"][yellow_robot.robot_id] = (int(yellow_robot.x), int(yellow_robot.y))
+    if robots_blue:
         for blue_robot in robots_blue:
             if 0 <= blue_robot.robot_id < 17:
-                robot[blue_robot.robot_id * 2 + 34] = blue_robot.x
-                robot[blue_robot.robot_id * 2 + 35] = blue_robot.y
-        # print("robo",robot)
-        if robot:
-            return robot.copy()
-        else:
-            return []
-    
+                robot_positions["blue"][blue_robot.robot_id] = (int(yellow_robot.x), int(yellow_robot.y))
+    return robot_positions
+
 def store_robot_position():
-    a=[]
-    robot_locate=[]
+    robot_locate = []
     while not stop_event.is_set():
         try:
-            a=track_robot_position()
-            if a:
-                robot_locate.append(a)
-                print("robot_locate",len(a))
-                len_a = len(a)
-                robotPath = path+ "robot_position.csv" # フルパスで保存
-            # print("robot_locate",robot_locate)
-            ###==== ログの保存 ====###
-            if robot_locate:
-                columns_ = [f"{int(i/2)if i<17 else int(i/2-8)}{'blue_' if i>17 else 'yellow_'}{'x' if i % 2 == 0 else 'y'}" for i in range(len_a)]
-                if receive_game_controller_signal() in Game_on:# and frame_number % 2 == 0:
-                    #print("yellow_robot: ", yellow_robot.robot_id)
-                    # df = pd.DataFrame(robot_locate, columns=columns_)
-                    df = pd.DataFrame(robot_locate, columns=columns_)
-                    df.to_csv(robotPath, header=True, index=False)
+            positions = track_robot_position()
+            if positions:
+                # 1フレーム分のデータを1行にまとめる
+                row = {}
+                for color in ["yellow", "blue"]:
+                    for robot_id, (x, y) in positions[color].items():
+                        row[f"{color}_{robot_id}_x"] = x
+                        row[f"{color}_{robot_id}_y"] = y
+                robot_locate.append(row)
+
+                # 保存処理（例：10フレームごとに保存）
+                if len(robot_locate) >= 10:
+                    robotPath = os.path.join(path, "robot_position.csv")
+                    df = pd.DataFrame(robot_locate)
+                    if not os.path.exists(robotPath):
+                        df.to_csv(robotPath, mode='w', header=True, index=False)
+                    else:
+                        df.to_csv(robotPath, mode='a', header=False, index=False)
+                    robot_locate.clear()
+                if debug:
+                    print(f"robot_locate (バッファ内): {len(robot_locate)}")
         except KeyboardInterrupt:
-            break    
-                    
+            break
+                
 def goal_scene():
     robot_poji_goal_path = path + "robot_position_goal.csv"
     robot_position_path = path + "robot_position.csv"
