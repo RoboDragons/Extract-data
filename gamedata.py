@@ -41,6 +41,9 @@ udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 udp.bind(addr)
 udp.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(multicast) + socket.inet_aton(local))
 
+packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
+
+    
 def setup_socket():
     global sock
     buffer_size = 4096  # バッファサイズ データの受け取るお皿の大きさ
@@ -58,6 +61,13 @@ def setup_socket():
     mreq = struct.pack('4sL', group, socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
+def receive_packet():
+    data, _ = udp.recvfrom(buffer)
+    packet.ParseFromString(data)
+    return packet
+    
+    
+    
 def receive_game_controller_signal():
     global sock
     buffer_size = 4096  # バッファサイズ データの受け取るお皿の大きさ
@@ -88,10 +98,10 @@ def receive_game_controller_signal():
 def track_ball_position():
     global udp
     balls_position = []
-    packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-    data, _ = udp.recvfrom(buffer)
-    packet.ParseFromString(data)
-
+    # packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
+    # data, _ = udp.recvfrom(buffer)
+    # packet.ParseFromString(data)
+    packet= receive_packet()
     frame = packet.detection
     if debug:
         print("frame: ", frame)
@@ -129,9 +139,8 @@ def track_robot_position():
     robot = [0] * 68
     if not os.path.isdir(path):
         os.mkdir(path)
-    packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-    data, _ = udp.recvfrom(buffer)
-    packet.ParseFromString(data)
+    packet = receive_packet()
+    
     robots_yellow = packet.detection.robots_yellow
     robots_blue = packet.detection.robots_blue
     
@@ -210,7 +219,8 @@ def goal_scene():
                     df = pd.DataFrame(last_20_frames, columns=columns_)
                     df.to_csv(robot_poji_goal_path, header=True, index=False)
         except KeyboardInterrupt:
-            break    
+            break  
+          
 def count_game_time(name):
     global game_time, blue_possession_time, yellow_possession_time, count
     with lock:
@@ -236,10 +246,6 @@ def possession(team_name):
     
     while not stop_event.is_set():
         try:
-            packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-            data, _ = udp.recvfrom(buffer)
-            packet.ParseFromString(data)
-
             frame = packet.detection
             if receive_game_controller_signal() in Game_on:
                 game_time+=1.0
@@ -310,12 +316,15 @@ if __name__ == "__main__":
     thread3 = threading.Thread(target=judge_possesion)
     thread4 = threading.Thread(target=store_robot_position)
     thread5 = threading.Thread(target=goal_scene)
+    thread6 = threading.Thread(target=receive_packet)
 
+    thread6.start()
     thread1.start()
     thread2.start()
     thread3.start()
     thread4.start()
     thread5.start()
+
 
     try:
         thread1.join()
@@ -323,6 +332,7 @@ if __name__ == "__main__":
         thread3.join()
         thread4.join()
         thread5.join()
+        thread6.join()
     except KeyboardInterrupt:
         stop_event.set()
         thread1.join()
@@ -330,6 +340,7 @@ if __name__ == "__main__":
         thread3.join()
         thread4.join()
         thread5.join()
+        thread6.join()
 
     udp.close()
     sock.close()
