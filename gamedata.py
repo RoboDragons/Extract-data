@@ -194,20 +194,19 @@ def goal_scene():
                 #     print("goal_y",ball_y)
                 #     print("goal_x",ball_x)
                 if ball_x > 6000:
-                    print("poji_goal")
-                if robot_poji and ((ball_x > poji_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)) or (ball_x < nega_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y))):
-                    print("poji_goal", (ball_x > poji_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)))
-                    print("nega_goal", (ball_x < nega_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)))
-                    
-                    # robot_position.csvの末尾から20フレーム分のデータを取得
-                    # if os.path.exists(robot_position_path):
-                    df_robot_position = pd.read_csv(robot_position_path)
-                    last_20_frames = df_robot_position.tail(120)
-                    print("Last 20 frames of robot position:")
-                    print(last_20_frames)
-                    
-                    df = pd.DataFrame(last_20_frames, columns=columns_)
-                    df.to_csv(robot_poji_goal_path, header=True, index=False)
+                    if robot_poji and ((ball_x > poji_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)) or (ball_x < nega_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y))):
+                        print("poji_goal", (ball_x > poji_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)))
+                        print("nega_goal", (ball_x < nega_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)))
+                        
+                        # robot_position.csvの末尾から20フレーム分のデータを取得
+                        # if os.path.exists(robot_position_path):
+                        df_robot_position = pd.read_csv(robot_position_path)
+                        last_20_frames = df_robot_position.tail(120)
+                        print("Last 20 frames of robot position:")
+                        print(last_20_frames)
+                        
+                        df = pd.DataFrame(last_20_frames, columns=columns_)
+                        df.to_csv(robot_poji_goal_path, header=True, index=False)
         except KeyboardInterrupt:
             break  
           
