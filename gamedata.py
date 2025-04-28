@@ -124,43 +124,6 @@ def store_ball_position():
         except KeyboardInterrupt:
             break
 
-# def track_robot_position():
-#     global udp
-#     robotPath = path + "robot_position.csv"
-#     while not stop_event.is_set():
-#         try:
-#             packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-#             data, _ = udp.recvfrom(buffer)
-#             packet.ParseFromString(data)
-#             frame = []
-#             frame = packet.detection
-            
-#             yellow = [0] * 35
-            
-#             if frame:
-#                 for i in frame.robots_yellow:
-#                     yellow[i.robot_id*2+1] = i.x
-#                     yellow[i.robot_id*2+2] = i.y
-#                     frame.append(yellow)
-#                     time.sleep(0.001)
-
-#             ###==== ログの保存 ====###
-#             if not os.path.isdir(robotPath):
-#                 os.mkdir(robotPath)
-#             if frame:
-#                 columns_ = []
-#                 for i in range(len(yellow)):
-#                     if i % 2 == 1:
-#                         columns_.append(str(i) + "p_x")
-#                     if i % 2 == 0:
-#                         columns_.append(str(i) + "p_y")
-
-#                 if receive_game_controller_signal() in Game_on:
-#                     df = pd.DataFrame(frame, columns=columns_)
-#                     df.to_csv(robotPath, header=True, index=False)
-
-#         except KeyboardInterrupt:
-#             break
 def track_robot_position():
     global udp
     robot = [0] * 68
