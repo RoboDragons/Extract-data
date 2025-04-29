@@ -1,9 +1,13 @@
 import os
 import pandas as pd
 
-def goal_scene(track_ball_position, track_robot_position, path, poji_goal_x, poji_goal_y, nega_goal_x, nega_goal_y, stop_event, debug=False):
+def goal_scene(track_ball_position, track_robot_position, path, stop_event, debug=False):
     robot_poji_goal_path = os.path.join(path, "robot_position_goal.csv")
     robot_position_path = os.path.join(path, "robot_position.csv")
+    poji_goal_x=6000
+    nega_goal_x=-6000
+    poji_goal_y=600
+    nega_goal_y=600
     if not os.path.isdir(path):
         os.mkdir(path)
     while not stop_event.is_set():

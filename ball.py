@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-
+import math
 def track_ball_position(udp, receive_packet, receive_game_controller_signal, stop_event, debug=False, sock=None):
     balls_position = []
     packet = receive_packet(udp)
@@ -15,6 +15,7 @@ def track_ball_position(udp, receive_packet, receive_game_controller_signal, sto
             state = receive_game_controller_signal(sock, stop_event)
             balls_position.append([int(ball.x), int(ball.y), state,receive_packet(udp).detection.frame_number])
             return balls_position
+
 def store_ball_position(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug=False, sock=None):
     while not stop_event.is_set():
         try:
@@ -34,12 +35,33 @@ def store_ball_position(udp, receive_packet, receive_game_controller_signal, sto
         except KeyboardInterrupt:
             break
 
-def ball_velocity(udp,receive_packet,ball_position):
-    if len(ball_position) < 2:
-        return 0, 0
-    x1, y1 = ball_position[-2][:2]
-    x2, y2 = ball_position[-1][:2]
-    vx = (x2 - x1) / 0.033  # Assuming a frame rate of 30 FPS
-    vy = (y2 - y1) / 0.033
-    
-    return vx, vy
+def ball_velocity(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug, sock):
+    ball_posi = []
+    while not stop_event.is_set():
+        try:
+            
+            ball_position = track_ball_position(udp, receive_packet, receive_game_controller_signal, stop_event, debug, sock)
+            if ball_position:
+                ball_posi.append(ball_position[0])  # 最新データを追加
+                # print("ball_position: ", ball_position)
+                print("---------------------------------\n")
+                print("ball_position[0]: ", ball_position[0])
+                print("---------------------------------\n")
+                # print("ball_posi: ", ball_posi)
+                print("---------------------------------\n")
+                print("ball_posi[0]: ", ball_posi[0])
+                if len(ball_posi) == 2:
+                    x1, y1, state1, frame1 = ball_posi[0]
+                    x2, y2, state2, frame2 = ball_posi[1]
+                    dt = (frame2 - frame1) * (1/60)
+                    vx = (x2 - x1) / dt
+                    vy = (y2 - y1) / dt
+                    speed = math.sqrt(vx ** 2 + vy ** 2) 
+                    print("vx:", vx)
+                    print("vy:", vy)
+                    print("ball_velocity:", speed)
+
+                    ball_posi[0] = ball_posi[1]  # 最新データを更新
+                    ball_posi.pop(-1)  # 2つを超えたら古いものを削除
+        except KeyboardInterrupt:
+            break
