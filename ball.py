@@ -13,7 +13,7 @@ def track_ball_position(udp, receive_packet, receive_game_controller_signal, sto
             ball = balls[0]
             # sockを引数で受け取るか、グローバルから参照
             state = receive_game_controller_signal(sock, stop_event)
-            balls_position.append([int(ball.x), int(ball.y), state])
+            balls_position.append([int(ball.x), int(ball.y), state,receive_packet(udp).detection.frame_number])
             return balls_position
 def store_ball_position(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug=False, sock=None):
     while not stop_event.is_set():
@@ -23,7 +23,7 @@ def store_ball_position(udp, receive_packet, receive_game_controller_signal, sto
             if not os.path.isdir(path):
                 os.mkdir(path)
             if ball_position:
-                df = pd.DataFrame(ball_position, columns=["x", "y", "state"])
+                df = pd.DataFrame(ball_position, columns=["x", "y", "state","frame_number"])
                 if not os.path.exists(ballpojiPath):
                     df.to_csv(ballpojiPath, mode='w', header=True, index=False)
                 else:
@@ -33,3 +33,13 @@ def store_ball_position(udp, receive_packet, receive_game_controller_signal, sto
                 print("\n")
         except KeyboardInterrupt:
             break
+
+def ball_velocity(udp,receive_packet,ball_position):
+    if len(ball_position) < 2:
+        return 0, 0
+    x1, y1 = ball_position[-2][:2]
+    x2, y2 = ball_position[-1][:2]
+    vx = (x2 - x1) / 0.033  # Assuming a frame rate of 30 FPS
+    vy = (y2 - y1) / 0.033
+    
+    return vx, vy
