@@ -41,6 +41,8 @@ udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 udp.bind(addr)
 udp.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(multicast) + socket.inet_aton(local))
 
+packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
+
 def setup_socket():
     global sock
     buffer_size = 4096  # バッファサイズ データの受け取るお皿の大きさ
@@ -58,6 +60,11 @@ def setup_socket():
     mreq = struct.pack('4sL', group, socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
+def receive_packet():
+    data, _ = udp.recvfrom(buffer)
+    packet.ParseFromString(data)
+    return packet
+    
 def receive_game_controller_signal():
     global sock
     buffer_size = 4096  # バッファサイズ データの受け取るお皿の大きさ
@@ -88,10 +95,10 @@ def receive_game_controller_signal():
 def track_ball_position():
     global udp
     balls_position = []
-    packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-    data, _ = udp.recvfrom(buffer)
-    packet.ParseFromString(data)
-
+    # packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
+    # data, _ = udp.recvfrom(buffer)
+    # packet.ParseFromString(data)
+    packet= receive_packet()
     frame = packet.detection
     if debug:
         print("frame: ", frame)
@@ -124,96 +131,51 @@ def store_ball_position():
         except KeyboardInterrupt:
             break
 
-# def track_robot_position():
-#     global udp
-#     robotPath = path + "robot_position.csv"
-#     while not stop_event.is_set():
-#         try:
-#             packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-#             data, _ = udp.recvfrom(buffer)
-#             packet.ParseFromString(data)
-#             frame = []
-#             frame = packet.detection
-            
-#             yellow = [0] * 35
-            
-#             if frame:
-#                 for i in frame.robots_yellow:
-#                     yellow[i.robot_id*2+1] = i.x
-#                     yellow[i.robot_id*2+2] = i.y
-#                     frame.append(yellow)
-#                     time.sleep(0.001)
-
-#             ###==== ログの保存 ====###
-#             if not os.path.isdir(robotPath):
-#                 os.mkdir(robotPath)
-#             if frame:
-#                 columns_ = []
-#                 for i in range(len(yellow)):
-#                     if i % 2 == 1:
-#                         columns_.append(str(i) + "p_x")
-#                     if i % 2 == 0:
-#                         columns_.append(str(i) + "p_y")
-
-#                 if receive_game_controller_signal() in Game_on:
-#                     df = pd.DataFrame(frame, columns=columns_)
-#                     df.to_csv(robotPath, header=True, index=False)
-
-#         except KeyboardInterrupt:
-#             break
 def track_robot_position():
-    global udp
-    robot = [0] * 68
     if not os.path.isdir(path):
         os.mkdir(path)
-    packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-    data, _ = udp.recvfrom(buffer)
-    packet.ParseFromString(data)
+    packet = receive_packet()
     robots_yellow = packet.detection.robots_yellow
     robots_blue = packet.detection.robots_blue
-    
-    if robots_yellow and robots_blue:  # ちゃんとデータがあるかチェック  
+    robot_positions = {"yellow": {}, "blue": {}}
+    if robots_yellow:
         for yellow_robot in robots_yellow:
-            if 0 <= yellow_robot.robot_id < 17:  # IDが範囲外にならないようチェック
-                #print("yellow_robot: ", yellow_robot.robot_id)
-                robot[yellow_robot.robot_id*2] = yellow_robot.x
-                robot[yellow_robot.robot_id*2+1] = yellow_robot.y
-                #robot[yellow_robot.robot_id] = yellow_robot.robot_id
-
-            break
+            if 0 <= yellow_robot.robot_id < 17:
+                robot_positions["yellow"][yellow_robot.robot_id] = (int(yellow_robot.x), int(yellow_robot.y))
+    if robots_blue:
         for blue_robot in robots_blue:
             if 0 <= blue_robot.robot_id < 17:
-                robot[blue_robot.robot_id * 2 + 34] = blue_robot.x
-                robot[blue_robot.robot_id * 2 + 35] = blue_robot.y
-        # print("robo",robot)
-        if robot:
-            return robot.copy()
-        else:
-            return []
-    
+                robot_positions["blue"][blue_robot.robot_id] = (int(yellow_robot.x), int(yellow_robot.y))
+    return robot_positions
+
 def store_robot_position():
-    a=[]
-    robot_locate=[]
+    robot_locate = []
     while not stop_event.is_set():
         try:
-            a=track_robot_position()
-            if a:
-                robot_locate.append(a)
-                print("robot_locate",len(a))
-                len_a = len(a)
-                robotPath = path+ "robot_position.csv" # フルパスで保存
-            # print("robot_locate",robot_locate)
-            ###==== ログの保存 ====###
-            if robot_locate:
-                columns_ = [f"{int(i/2)if i<17 else int(i/2-8)}{'blue_' if i>17 else 'yellow_'}{'x' if i % 2 == 0 else 'y'}" for i in range(len_a)]
-                if receive_game_controller_signal() in Game_on:# and frame_number % 2 == 0:
-                    #print("yellow_robot: ", yellow_robot.robot_id)
-                    # df = pd.DataFrame(robot_locate, columns=columns_)
-                    df = pd.DataFrame(robot_locate, columns=columns_)
-                    df.to_csv(robotPath, header=True, index=False)
+            positions = track_robot_position()
+            if positions:
+                # 1フレーム分のデータを1行にまとめる
+                row = {}
+                for color in ["yellow", "blue"]:
+                    for robot_id, (x, y) in positions[color].items():
+                        row[f"{color}_{robot_id}_x"] = x
+                        row[f"{color}_{robot_id}_y"] = y
+                robot_locate.append(row)
+
+                # 保存処理（例：10フレームごとに保存）
+                if len(robot_locate) >= 10:
+                    robotPath = os.path.join(path, "robot_position.csv")
+                    df = pd.DataFrame(robot_locate)
+                    if not os.path.exists(robotPath):
+                        df.to_csv(robotPath, mode='w', header=True, index=False)
+                    else:
+                        df.to_csv(robotPath, mode='a', header=False, index=False)
+                    robot_locate.clear()
+                if debug:
+                    print(f"robot_locate (バッファ内): {len(robot_locate)}")
         except KeyboardInterrupt:
-            break    
-                    
+            break
+                
 def goal_scene():
     robot_poji_goal_path = path + "robot_position_goal.csv"
     robot_position_path = path + "robot_position.csv"
@@ -232,22 +194,22 @@ def goal_scene():
                 #     print("goal_y",ball_y)
                 #     print("goal_x",ball_x)
                 if ball_x > 6000:
-                    print("poji_goal")
-                if robot_poji and ((ball_x > poji_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)) or (ball_x < nega_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y))):
-                    print("poji_goal", (ball_x > poji_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)))
-                    print("nega_goal", (ball_x < nega_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)))
-                    
-                    # robot_position.csvの末尾から20フレーム分のデータを取得
-                    # if os.path.exists(robot_position_path):
-                    df_robot_position = pd.read_csv(robot_position_path)
-                    last_20_frames = df_robot_position.tail(120)
-                    print("Last 20 frames of robot position:")
-                    print(last_20_frames)
-                    
-                    df = pd.DataFrame(last_20_frames, columns=columns_)
-                    df.to_csv(robot_poji_goal_path, header=True, index=False)
+                    if robot_poji and ((ball_x > poji_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)) or (ball_x < nega_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y))):
+                        print("poji_goal", (ball_x > poji_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)))
+                        print("nega_goal", (ball_x < nega_goal_x and (ball_y < poji_goal_y and ball_y > nega_goal_y)))
+                        
+                        # robot_position.csvの末尾から20フレーム分のデータを取得
+                        # if os.path.exists(robot_position_path):
+                        df_robot_position = pd.read_csv(robot_position_path)
+                        last_20_frames = df_robot_position.tail(120)
+                        print("Last 20 frames of robot position:")
+                        print(last_20_frames)
+                        
+                        df = pd.DataFrame(last_20_frames, columns=columns_)
+                        df.to_csv(robot_poji_goal_path, header=True, index=False)
         except KeyboardInterrupt:
-            break    
+            break  
+          
 def count_game_time(name):
     global game_time, blue_possession_time, yellow_possession_time, count
     with lock:
@@ -273,10 +235,6 @@ def possession(team_name):
     
     while not stop_event.is_set():
         try:
-            packet = messages_robocup_ssl_wrapper_pb2.SSL_WrapperPacket()
-            data, _ = udp.recvfrom(buffer)
-            packet.ParseFromString(data)
-
             frame = packet.detection
             if receive_game_controller_signal() in Game_on:
                 game_time+=1.0
@@ -347,12 +305,15 @@ if __name__ == "__main__":
     thread3 = threading.Thread(target=judge_possesion)
     thread4 = threading.Thread(target=store_robot_position)
     thread5 = threading.Thread(target=goal_scene)
+    thread6 = threading.Thread(target=receive_packet)
 
+    thread6.start()
     thread1.start()
     thread2.start()
     thread3.start()
     thread4.start()
     thread5.start()
+
 
     try:
         thread1.join()
@@ -360,6 +321,7 @@ if __name__ == "__main__":
         thread3.join()
         thread4.join()
         thread5.join()
+        thread6.join()
     except KeyboardInterrupt:
         stop_event.set()
         thread1.join()
@@ -367,6 +329,7 @@ if __name__ == "__main__":
         thread3.join()
         thread4.join()
         thread5.join()
+        thread6.join()
 
     udp.close()
     sock.close()
