@@ -7,32 +7,17 @@ assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+blank_issues_enabled: false
+contact_links:
+  - name: 質問・相談
+    url: https://github.com/habitat-hub/board-game-prototype/discussions
+    about: バグ報告や機能リクエスト以外の質問・相談はDiscussionsをご利用ください。
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+# Issue作成時のテンプレート設定
+defaults:
+  - template: "bug_report.yml"
+    name: "🐛 バグ報告"
+    about: "バグを報告する"
+  - template: "feature_request.yml"
+    name: "💡 機能リクエスト"
+    about: "新機能のアイデアを提案する"
