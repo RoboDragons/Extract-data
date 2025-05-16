@@ -1,10 +1,8 @@
 FROM ubuntu:latest
 
-# 必要なパッケージをインストール
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-
-RUN     python3 \
+        python3 \
         python3-pip \
         python3-venv \
         python3-dev \
@@ -21,17 +19,21 @@ RUN     python3 \
         openjdk-21-jdk \
         libboost-all-dev \
         gnome-terminal \
+        dbus-x11 \
+        locales \
     && rm -rf /var/lib/apt/lists/*
 
-# Javaの環境変数を設定（=で記述）
+RUN locale-gen ja_JP.UTF-8
+
+ENV LANG=ja_JP.UTF-8
+ENV LANGUAGE=ja_JP:ja
+ENV LC_ALL=ja_JP.UTF-8
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 
-WORKDIR ~
+WORKDIR /workspace
 
-COPY requirements.txt .
+COPY ../requirements.txt .
 
 RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
-
-COPY . .
 
 CMD ["/bin/bash"]
