@@ -32,7 +32,6 @@ ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 
 WORKDIR /workspace
 
-COPY ../requirements.txt .
 
 RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
 
