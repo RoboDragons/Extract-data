@@ -35,18 +35,19 @@ def store_ball_position(udp, receive_packet, receive_game_controller_signal, sto
         except KeyboardInterrupt: # キーボード割り込みで終了
             break
 
-def ball_velocity(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug, sock): # ボール速度の計算
+def ball_velocity(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug=False, sock=None): # ボール速度の計算
     ball_posi = [] # 過去のボール位置のリスト
     while not stop_event.is_set(): # スレッドが停止されるまでループ
         try:
             ball_position = track_ball_position(udp, receive_packet, receive_game_controller_signal, stop_event, debug, sock) # ボール位置を追跡
             if ball_position:
                 ball_posi.append(ball_position[0]) # ボール位置をball_posiに追加
-                print("---------------------------------\n")
-                print("ball_position[0]: ", ball_position[0]) # 最新のボール位置を表示
-                print("---------------------------------\n")
-                print("ball_posi[0]: ", ball_posi[0]) # ひとつ前のボール位置を表示
-                
+                if debug:
+                    print("---------------------------------\n")
+                    print("ball_position[0]: ", ball_position[0]) # デバッグ用に最新のボール位置を表示
+                    print("---------------------------------\n")
+                    print("ball_posi[0]: ", ball_posi[0]) # デバッグ用にひとつ前のボール位置を表示
+                    print("---------------------------------\n")
                 if len(ball_posi) == 2: # 2つのボール位置がある場合
                     x1, y1, state1, frame1 = ball_posi[0] # ひとつ前のボール位置,状態,フレーム番号
                     x2, y2, state2, frame2 = ball_posi[1] # 最新のボール位置,状態,フレーム番号
@@ -54,9 +55,22 @@ def ball_velocity(udp, receive_packet, receive_game_controller_signal, stop_even
                     vx = (x2 - x1) / dt # x方向の速度
                     vy = (y2 - y1) / dt # y方向の速度
                     speed = math.sqrt(vx ** 2 + vy ** 2) # ボールの速度
-                    print("vx:", vx) # x方向の速度を表示
-                    print("vy:", vy) # y方向の速度を表示
-                    print("ball_velocity:", speed) # ボールの速度を表示
+                    direction_rad = math.atan2(vy, vx) # 速度の方向をラジアンで計算
+                    direction_deg = math.degrees(direction_rad) # 速度の方向を度に変換
+                    if debug:
+                        print("vx:", vx) # x方向の速度を表示
+                        print("vy:", vy) # y方向の速度を表示
+                        print("ball_velocity:", speed) # ボールの速度を表示
+                        print("direction_deg:", direction_deg) # 速度の方向を表示
+                    new_velocity_data = [[speed, direction_deg, state1, state2, frame2]] # 新しいボール速度のデータ
+                    df = pd.DataFrame(new_velocity_data, columns=["speed", "direction", "state1", "state2", "frame_number"]) # ボール速度のデータフレームを作成
+                    ball_velocity_path = os.path.join(path, "ball_velocity.csv") # ボール速度のCSVファイルパス
+                    if not os.path.isdir(path):
+                        os.mkdir(path) # 出力先ディレクトリが存在しない場合は作成
+                    if not os.path.exists(ball_velocity_path):
+                        df.to_csv(ball_velocity_path, mode='w', header=True, index=False) # ボール速度のCSVファイルが存在しない場合は新規作成
+                    else:
+                        df.to_csv(ball_velocity_path, mode='a', header=False, index=False) # 存在する場合は追記
 
                     ball_posi[0] = ball_posi[1]  # 最新データを更新
                     ball_posi.pop(-1)  # 2つを超えたら古いものを削除
