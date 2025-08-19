@@ -13,7 +13,7 @@ def track_ball_position(udp, receive_packet, receive_game_controller_signal, sto
             ball = balls[0] # 最初のボールを取得
             # sockを引数で受け取るか、グローバルから参照
             state = receive_game_controller_signal(sock, stop_event) # ゲームコントローラーの信号を受信
-            balls_position.append([int(ball.x), int(ball.y), state,receive_packet(udp).detection.frame_number]) # ボール位置を保存
+            balls_position.append([int(ball.x), int(ball.y), state, frame.frame_number]) # ボール位置を保存
             return balls_position
 
 def store_ball_position(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug=False, sock=None): # ボール位置の保存
