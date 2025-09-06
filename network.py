@@ -8,6 +8,7 @@ multicast = "224.5.23.2"
 port = 10006
 buffer = 65536
 addr = ('', port)
+ref_signal= [None, None]  # [command, state]
 
 udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -34,20 +35,36 @@ def receive_packet(udp):
     return packet
 
 def receive_game_controller_signal(sock, stop_event, buffer_size=4096, debug=False):
+    global ref_signal
     try:
         while not stop_event.is_set():
             data, address = sock.recvfrom(buffer_size)
-            if debug:
-                print("データを受信しました from", address)
-                print("受信データ (バイナリ):", data)
             try:
                 referee_message = ssl_gc_referee_message_pb2.Referee()
                 referee_message.ParseFromString(data)
-                if debug:
-                    print("Referee Message (人間が読みやすい形式):")
+                # print(referee_message.command)
+                # print("referee_message:", referee_message)
+                # print("-----------------------")
+                if(ref_signal[0] is None):
+                    ref_signal[0] = referee_message.command
+                    # print(ref_signal[0])
+                    print("de")
+                    
+                else:
+                    ref_signal[1] = referee_message.command
+                    # print(ref_signal)
+                    if ref_signal[1]!=ref_signal[0]:
+                        print("Referee Command Changed:", referee_message.command)
+                        ref_signal[0]=ref_signal[1]
+                    
+                # if debug:
+                # print("Referee Message (人間が読みやすい形式):")
+                # print(referee_message.command)
+                # print("Referee Command:", type(referee_message.command))
                 return referee_message.command
+                # return referee_message
             except Exception as e:
                 print("RefereeMessage デコードエラー:", e)
-                print("----------------------")
+                # print("----------------------")
     except KeyboardInterrupt:
         print("終了処理を開始します...")
