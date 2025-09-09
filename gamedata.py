@@ -216,13 +216,13 @@ def count_game_time(name):
         if receive_game_controller_signal() in Game_on:
             if name == "b":
                 blue_possession_time+=1.0
-            elif name == "y":
+            if name == "y":
                 yellow_possession_time+=1.0 
             game_time+=1.0
         return [game_time, blue_possession_time, yellow_possession_time]
 
 def possession(team_name):
-    global game_time, blue_possession_time, yellow_possession_time, udp, path, possessionPath,robots_radius,holding_distance
+    global  path, possessionPath,robots_radius,holding_distance
     possessionPath = path + "possession.csv"
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -237,19 +237,17 @@ def possession(team_name):
         try:
             frame = packet.detection
             if receive_game_controller_signal() in Game_on:
-                game_time+=1.0
                 if frame:
                     #print("frame: ", frame)
                     if team_name == "b":
                         robot = frame.robots_blue
-                    elif team_name == "y":
+                    if team_name == "y":
                         robot = frame.robots_yellow
                     balls = frame.balls
+                    # print(frame.balls)
                     #print(robots_blue)
                     if balls:
                         ball=balls[0]
-                        if debug:
-                            print("ball: ", int(ball.x))
                         if robot:
                             for i in range(len(robot)):
                                 ball_to_robots_distance.append((robot[i].x-ball.x)**2+(robot[i].y-ball.y)**2)
@@ -259,7 +257,6 @@ def possession(team_name):
                             if 0 <= min_dist_robot_index < len(robot):
                                 if math.atan(robot[min_dist_robot_index].orientation)*(ball.x-robot[min_dist_robot_index].x)+robot[min_dist_robot_index].y+robots_radius > ball.y and math.atan(robot[min_dist_robot_index].orientation)*(ball.x-robot[min_dist_robot_index].x)+robot[min_dist_robot_index].y-robots_radius < ball.y:
                                     if min(ball_to_robots_distance) < holding_distance*holding_distance :
-                                        yellow_possession_time+=1.0
                                         holding_num.append(robot[min_dist_robot_index].robot_id)
                                         if holding_num.count(robot[min_dist_robot_index].robot_id) >=10:
                                             #print("yellow",min_dist_robot_index) if team_name=="yellow" else print("blue",min_dist_robot_index)

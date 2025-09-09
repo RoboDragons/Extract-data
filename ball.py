@@ -5,8 +5,8 @@ def track_ball_position(udp, receive_packet, receive_game_controller_signal, sto
     balls_position = []
     packet = receive_packet(udp)
     frame = packet.detection
-    if debug:
-        print("frame: ", frame)
+    # if debug:
+        # print("frame: ", frame)
     if frame:
         balls = frame.balls
         if balls:
@@ -29,9 +29,9 @@ def store_ball_position(udp, receive_packet, receive_game_controller_signal, sto
                     df.to_csv(ballpojiPath, mode='w', header=True, index=False)
                 else:
                     df.to_csv(ballpojiPath, mode='a', header=False, index=False)
-            if debug:
-                print("ball_position: ", ball_position)
-                print("\n")
+            # if debug:
+                # print("ball_position: ", ball_position)
+                # print("\n")
         except KeyboardInterrupt:
             break
 
@@ -44,12 +44,12 @@ def ball_velocity(udp, receive_packet, receive_game_controller_signal, stop_even
             if ball_position:
                 ball_posi.append(ball_position[0])  # 最新データを追加
                 # print("ball_position: ", ball_position)
-                print("---------------------------------\n")
-                print("ball_position[0]: ", ball_position[0])
-                print("---------------------------------\n")
+                # print("---------------------------------\n")
+                # print("ball_position[0]: ", ball_position[0])
+                # print("---------------------------------\n")
                 # print("ball_posi: ", ball_posi)
-                print("---------------------------------\n")
-                print("ball_posi[0]: ", ball_posi[0])
+                # print("---------------------------------\n")
+                # print("ball_posi[0]: ", ball_posi[0])
                 if len(ball_posi) == 2:
                     x1, y1, state1, frame1 = ball_posi[0]
                     x2, y2, state2, frame2 = ball_posi[1]
@@ -57,9 +57,9 @@ def ball_velocity(udp, receive_packet, receive_game_controller_signal, stop_even
                     vx = (x2 - x1) / dt
                     vy = (y2 - y1) / dt
                     speed = math.sqrt(vx ** 2 + vy ** 2) 
-                    print("vx:", vx)
-                    print("vy:", vy)
-                    print("ball_velocity:", speed)
+                    # print("vx:", vx)
+                    # print("vy:", vy)
+                    # print("ball_velocity:", speed)
 
                     ball_posi[0] = ball_posi[1]  # 最新データを更新
                     ball_posi.pop(-1)  # 2つを超えたら古いものを削除
