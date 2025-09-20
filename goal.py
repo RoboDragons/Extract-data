@@ -48,7 +48,7 @@ def calculate_ball_angle(ball_velocity_data):
             return angle, math.sqrt(vx**2 + vy**2)
     return None, None
 
-def goal_scene(track_ball_position, track_robot_position, path, stop_event, debug=False):
+def goal_scene(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug, sock):
     # 左右ゴール用の別々のファイルパス
     left_goal_path = os.path.join(path, "robot_position_left_goal.csv")
     right_goal_path = os.path.join(path, "robot_position_right_goal.csv")
@@ -68,8 +68,12 @@ def goal_scene(track_ball_position, track_robot_position, path, stop_event, debu
         
     while not stop_event.is_set():
         try:
-            balls_position = track_ball_position()
-            robot_poji = track_robot_position()
+            # Import the tracking functions here to use them properly
+            from ball import track_ball_position
+            from robot import track_robot_position
+            
+            balls_position = track_ball_position(udp, receive_packet, receive_game_controller_signal, stop_event, debug, sock)
+            robot_poji = track_robot_position(udp, receive_packet, path)
             
             if balls_position and robot_poji:
                 ball_x, ball_y, state = balls_position[-1]
