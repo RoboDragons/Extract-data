@@ -41,6 +41,9 @@ def ball_velocity(udp, receive_packet, receive_game_controller_signal, stop_even
         try:
             
             ball_position = track_ball_position(udp, receive_packet, receive_game_controller_signal, stop_event, debug, sock)
+            ball_velocity_path = os.path.join(path, "ball_velocity.csv")
+            if not os.path.isdir(path):
+                os.mkdir(path)
             if ball_position:
                 ball_posi.append(ball_position[0])  # 最新データを追加
                 # print("ball_position: ", ball_position)
@@ -60,6 +63,16 @@ def ball_velocity(udp, receive_packet, receive_game_controller_signal, stop_even
                     # print("vx:", vx)
                     # print("vy:", vy)
                     # print("ball_velocity:", speed)
+
+                    direction = math.atan2(vy/vx)
+                    
+                    new_velocity_data = [speed,direction,state1,state2,frame2]
+
+                    df = pd.DataFrame(new_velocity_data, columns=["speed","direction","state1","state2","frame_number"])
+                    if not os.path.exists(ball_velocity_path):
+                        df.to_csv(ball_velocity_path, mode='w', header=True, index=False) # Create a new ball velocity CSV file if it does not exist
+                    else:
+                        df.to_csv(ball_velocity_path, mode='a', header=False, index=False) # Add if it exists
 
                     ball_posi[0] = ball_posi[1]  # 最新データを更新
                     ball_posi.pop(-1)  # 2つを超えたら古いものを削除
