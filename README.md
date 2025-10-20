@@ -1,5 +1,6 @@
 # Extract-data
-
+説明書：
+https://docs.google.com/presentation/d/1mYKmMry_S_inGERtIFB3dyAUrgqKzL2KXuPlgpXNPPI/edit?usp=sharing
 ## 概要
 このリポジトリは、ロボカップのようなロボットサッカーの試合データを抽出・（可視化）するためのツールセットです。Pythonとシェルスクリプトを活用し、試合ログの再生やデータ収集、（可視化作業）を自動化します。RoboCup Small Size League（SSL）のツールと連携し、研究やチーム開発に貢献します。
 
