@@ -21,9 +21,8 @@ if __name__ == "__main__":
     )
     thread_ballvelocity = threading.Thread(target=ball_velocity, args=(udp, receive_packet,receive_game_controller_signal, stop_event, path, debug, sock))
     thread_robot = threading.Thread(target=store_robot_position, args=(udp, receive_packet, path, stop_event, debug))
-     # thread_goal = threading.Thread(target=goal_scene, args=(track_ball_position, track_robot_position, path, stop_event, debug))
+    thread_goal = threading.Thread(target=goal_scene, args=(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug, sock))
     thread_possession= threading.Thread(target=store_possesion, args=(udp, receive_packet,receive_game_controller_signal, stop_event, path, debug, sock))
-     # thread_goal.start()
     thread_pass = threading.Thread(
         target=count_passes,
         args=(udp, receive_packet, receive_game_controller_signal, stop_event, path, debug, sock)
@@ -31,6 +30,7 @@ if __name__ == "__main__":
      
     thread_ball.start()
     thread_robot.start()
+    thread_goal.start()
     thread_ballvelocity.start()
     thread_possession.start()
     thread_pass.start()
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     try:
         thread_ball.join()
         thread_robot.join()
-         # thread_goal.join()
+        thread_goal.join()
         thread_ballvelocity.join()
         thread_possession.join()
         thread_pass.join()
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         stop_event.set()
         thread_ball.join()
         thread_robot.join()
-         # thread_goal.join()
+        thread_goal.join()
         thread_ballvelocity.join()
         thread_pass.join()
     udp.close()
